@@ -3,13 +3,13 @@ import * as shape from './boundingshape';
 import * as boundinghull from './boundinghull';
 import * as transform from './transform';
 
-export class cwBoundingSphere extends shape.cwBoundingShape {
+export class BoundingSphere extends shape.BoundingShape {
     public static readonly type: string = 'sphere';
     private _sphere: point.ISphere2d;
     private _dirty: boolean;
     private _boundingbox: point.IRect2d;
     constructor(sphere: point.ISphere2d = null) {
-        super(cwBoundingSphere.type);
+        super(BoundingSphere.type);
         this.sphere = sphere;
     }
     get center() {
@@ -46,6 +46,27 @@ export class cwBoundingSphere extends shape.cwBoundingShape {
         this._checkDirty();
         return this._boundingbox;
     }
+    getBoundingbox(): point.IRect2d {
+        return this.boundingbox;
+    }
+    getTransformedShape(transform: transform.Matrix2d): shape.BoundingShape {
+        if (!transform || !this._sphere) {
+            return new BoundingSphere(this._sphere);
+        } else {
+            const transformedPoints: point.IPoint2d[] = [];
+            const A = Math.PI * 0.125;
+            const D = A * 2;
+            const R = this._sphere.radius / Math.cos(A);
+            const shape = new boundinghull.BoundingHull();
+            for (let angle = A; angle < Math.PI * 2; angle += D) {
+                const pt = transform.transformPoint({ x: R * Math.cos(angle), y: R * Math.sin(angle) });
+                pt.x = Math.round(pt.x);
+                pt.y = Math.round(pt.y);
+                shape.addPoint(pt);
+            }
+            return shape;
+        }
+    }
     private _checkDirty() {
         if (this._dirty) {
             this._dirty = false;
@@ -55,27 +76,6 @@ export class cwBoundingSphere extends shape.cwBoundingShape {
                 w: 2 * this._sphere.radius - 1,
                 h: 2 * this._sphere.radius - 1
             };
-        }
-    }
-    getBoundingbox(): point.IRect2d {
-        return this.boundingbox;
-    }
-    getTransformedShape(transform: transform.cwTransform2d): shape.cwBoundingShape {
-        if (!transform || !this._sphere) {
-            return new cwBoundingSphere(this._sphere);
-        } else {
-            const transformedPoints: point.IPoint2d[] = [];
-            const A = Math.PI * 0.125;
-            const D = A * 2;
-            const R = this._sphere.radius / Math.cos(A);
-            const shape = new boundinghull.cwBoundingHull();
-            for (let angle = A; angle < Math.PI * 2; angle += D) {
-                const pt = transform.transformPoint({ x: R * Math.cos(angle), y: R * Math.sin(angle) });
-                pt.x = Math.round(pt.x);
-                pt.y = Math.round(pt.y);
-                shape.addPoint(pt);
-            }
-            return shape;
         }
     }
 }

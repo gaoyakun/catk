@@ -2,13 +2,13 @@ import * as point from './point';
 import * as shape from './boundingshape';
 import * as transform from './transform';
 
-export class cwBoundingHull extends shape.cwBoundingShape {
+export class BoundingHull extends shape.BoundingShape {
     public static readonly type: string = 'Hull';
     private _points: { x: number; y: number }[];
     private _boundingbox: { x: number; y: number; w: number; h: number };
     private _dirtyFlag: boolean;
     constructor(points?: point.IPoint2d[]) {
-        super(cwBoundingHull.type);
+        super(BoundingHull.type);
         this._points = points || [];
         this._boundingbox = null;
         this._dirtyFlag = this._points.length > 0;
@@ -34,7 +34,7 @@ export class cwBoundingHull extends shape.cwBoundingShape {
     }
     removePoint(index: number) {
         this._points.splice(index, 1);
-        if (this._points.length == 0) {
+        if (this._points.length === 0) {
             this._boundingbox = null;
             this._dirtyFlag = false;
         } else {
@@ -49,11 +49,11 @@ export class cwBoundingHull extends shape.cwBoundingShape {
     getBoundingbox(): point.IRect2d {
         return this.boundingbox;
     }
-    getTransformedShape(transform: transform.cwTransform2d): shape.cwBoundingShape {
+    getTransformedShape(transform: transform.Matrix2d): shape.BoundingShape {
         if (!transform) {
-            return new cwBoundingHull(this._points);
+            return new BoundingHull(this._points);
         } else {
-            return new cwBoundingHull(
+            return new BoundingHull(
                 this._points.map(point => {
                     return transform.transformPoint(point);
                 })
@@ -76,19 +76,19 @@ export class cwBoundingHull extends shape.cwBoundingShape {
         for (let i = 2; i < num; i++) {
             let last = adjusted.length - 1;
             while (last > 0) {
-                const v1 = point.cwGetVector(adjusted[0], adjusted[last]);
-                const v2 = point.cwGetVector(adjusted[0], this._points[i]);
-                const t = point.cwCrossProduct(v1, v2);
+                const v1 = point.GetVector(adjusted[0], adjusted[last]);
+                const v2 = point.GetVector(adjusted[0], this._points[i]);
+                const t = point.CrossProduct(v1, v2);
                 if (t < 0) {
                     adjusted.splice(last + 1, 0, this._points[i]);
                     break;
-                } else if (t == 0 && point.cwVectorLengthSq(v2) > point.cwVectorLengthSq(v1)) {
+                } else if (t === 0 && point.VectorLengthSq(v2) > point.VectorLengthSq(v1)) {
                     adjusted.splice(last + 1, 0, this._points[i]);
                     break;
                 }
                 last--;
             }
-            if (last == 0) {
+            if (last === 0) {
                 adjusted.splice(1, 0, this._points[i]);
             }
         }

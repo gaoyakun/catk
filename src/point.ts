@@ -25,58 +25,58 @@ export interface ISphere2d {
     radius: number;
 }
 
-export function cwGetTopLeft(rect: IRect2d): IPoint2d {
+export function GetTopLeft(rect: IRect2d): IPoint2d {
     return { x: rect.x, y: rect.y };
 }
 
-export function cwGetTopRight(rect: IRect2d): IPoint2d {
+export function GetTopRight(rect: IRect2d): IPoint2d {
     return { x: rect.x + rect.w, y: rect.y };
 }
 
-export function cwGetBottomLeft(rect: IRect2d): IPoint2d {
+export function GetBottomLeft(rect: IRect2d): IPoint2d {
     return { x: rect.x, y: rect.y + rect.h };
 }
 
-export function cwGetBottomRight(rect: IRect2d): IPoint2d {
+export function GetBottomRight(rect: IRect2d): IPoint2d {
     return { x: rect.x + rect.w, y: rect.y + rect.h };
 }
 
-export function cwNormalize(v: IVector2d) {
-    const len = cwVectorLength(v);
+export function Normalize(v: IVector2d) {
+    const len = VectorLength(v);
     if (len > 0.0001) {
         v.x /= len;
         v.y /= len;
     }
 }
 
-export function cwVectorLengthSq(v: IVector2d) {
+export function VectorLengthSq(v: IVector2d) {
     return v.x * v.x + v.y * v.y;
 }
 
-export function cwVectorLength(v: IVector2d) {
-    return Math.sqrt(cwVectorLengthSq(v));
+export function VectorLength(v: IVector2d) {
+    return Math.sqrt(VectorLengthSq(v));
 }
 
-export function cwDistanceSq(p1: IPoint2d, p2: IPoint2d) {
-    return cwVectorLengthSq(cwGetVector(p1, p2));
+export function DistanceSq(p1: IPoint2d, p2: IPoint2d) {
+    return VectorLengthSq(GetVector(p1, p2));
 }
 
-export function cwDistance(p1: IPoint2d, p2: IPoint2d) {
-    return cwVectorLength(cwGetVector(p1, p2));
+export function Distance(p1: IPoint2d, p2: IPoint2d) {
+    return VectorLength(GetVector(p1, p2));
 }
 
-export function cwDotProduct(v1: IVector2d, v2: IVector2d) {
+export function DotProduct(v1: IVector2d, v2: IVector2d) {
     return v1.x * v2.x + v1.y * v2.y;
 }
 
-export function cwCrossProduct(v1: IVector2d, v2: IVector2d) {
+export function CrossProduct(v1: IVector2d, v2: IVector2d) {
     return v1.x * v2.y - v1.y * v2.x;
 }
 
-export function cwGetVector(start: IPoint2d, end: IPoint2d) {
+export function GetVector(start: IPoint2d, end: IPoint2d) {
     return { x: end.x - start.x, y: end.y - start.y };
 }
 
-export function cwClampPoint(pt: IPoint2d, ptMin: IPoint2d, ptMax: IPoint2d): IPoint2d {
+export function ClampPoint(pt: IPoint2d, ptMin: IPoint2d, ptMax: IPoint2d): IPoint2d {
     return { x: Math.max(ptMin.x, Math.min(ptMax.x, pt.x)), y: Math.max(ptMin.y, Math.min(ptMax.y, pt.y)) };
 }

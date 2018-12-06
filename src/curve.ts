@@ -1,12 +1,12 @@
 import { IPoint2d } from './point';
 
-export enum cwSplineType {
+export enum SplineType {
     STEP = 1,
     LINEAR = 2,
     POLY = 3
 }
 
-export class cwCurveEvaluter {
+export class CurveEvaluter {
     cp: IPoint2d[];
     clamp: boolean;
     constructor(cp: IPoint2d[], clamp: boolean = false) {
@@ -24,7 +24,7 @@ export class cwCurveEvaluter {
     }
 }
 
-export class cwStepEvaluter extends cwCurveEvaluter {
+export class StepEvaluter extends CurveEvaluter {
     h: number[];
     constructor(cp: IPoint2d[], clamp: boolean = false) {
         super(cp, clamp);
@@ -59,7 +59,7 @@ export class cwStepEvaluter extends cwCurveEvaluter {
     }
 }
 
-export class cwLinearEvaluter extends cwCurveEvaluter {
+export class CoLinearEvaluter extends CurveEvaluter {
     h: number[];
     constructor(cp: IPoint2d[], clamp: boolean = false) {
         super(cp, clamp);
@@ -79,7 +79,7 @@ export class cwLinearEvaluter extends cwCurveEvaluter {
                 break;
             }
         }
-        if (i == this.cp.length - 1) {
+        if (i === this.cp.length - 1) {
             i--;
         }
         return i;
@@ -99,7 +99,7 @@ export class cwLinearEvaluter extends cwCurveEvaluter {
     }
 }
 
-export class cwPolynomialsEvaluter extends cwCurveEvaluter {
+export class PolynomialsEvaluter extends CurveEvaluter {
     a: number[];
     h: number[];
     constructor(cp: IPoint2d[], clamp: boolean = false) {
@@ -146,7 +146,7 @@ export class cwPolynomialsEvaluter extends cwCurveEvaluter {
                 break;
             }
         }
-        if (i == this.cp.length - 1) {
+        if (i === this.cp.length - 1) {
             i--;
         }
         return i;
@@ -169,50 +169,10 @@ export class cwPolynomialsEvaluter extends cwCurveEvaluter {
     }
 }
 
-export class cwSpline {
-    private _evalutors: cwCurveEvaluter[];
+export class Spline {
+    private _evalutors: CurveEvaluter[];
     private _array: boolean;
-    private initArray(type: cwSplineType, cp: { x: number; y: number[] }[], clamp: boolean) {
-        const numElements = cp[0].y.length;
-        if (numElements > 0) {
-            for (let i = 0; i < numElements; i++) {
-                let t = [];
-                for (let j = 0; j < cp.length; j++) {
-                    let val = cp[j].y.length > i ? cp[j].y[i] : 0;
-                    t.push({ x: cp[j].x, y: val });
-                }
-                switch (type) {
-                    case cwSplineType.STEP:
-                        this._evalutors.push(new cwStepEvaluter(t, clamp));
-                        break;
-                    case cwSplineType.LINEAR:
-                        this._evalutors.push(new cwLinearEvaluter(t, clamp));
-                        break;
-                    case cwSplineType.POLY:
-                    default:
-                        this._evalutors.push(new cwPolynomialsEvaluter(t, clamp));
-                        break;
-                }
-            }
-            this._array = true;
-        }
-    }
-    private initNonArray(type: cwSplineType, cp: IPoint2d[], clamp: boolean) {
-        switch (type) {
-            case cwSplineType.STEP:
-                this._evalutors.push(new cwStepEvaluter(cp, clamp));
-                break;
-            case cwSplineType.LINEAR:
-                this._evalutors.push(new cwLinearEvaluter(cp, clamp));
-                break;
-            case cwSplineType.POLY:
-            default:
-                this._evalutors.push(new cwPolynomialsEvaluter(cp, clamp));
-                break;
-        }
-        this._array = false;
-    }
-    constructor(type: cwSplineType, cp: IPoint2d[] | { x: number; y: number[] }[], clamp: boolean = false) {
+    constructor(type: SplineType, cp: IPoint2d[] | { x: number; y: number[] }[], clamp: boolean = false) {
         this._evalutors = [];
         this._array = false;
         if (cp.length > 0) {
@@ -227,7 +187,7 @@ export class cwSpline {
         if (this._evalutors.length > 0) {
             if (this._array) {
                 let result: number[] = [];
-                this._evalutors.forEach((evalutor: cwCurveEvaluter) => {
+                this._evalutors.forEach((evalutor: CurveEvaluter) => {
                     result.push(evalutor.eval(x));
                 });
                 return result;
@@ -242,7 +202,7 @@ export class cwSpline {
         if (this._evalutors.length > 0) {
             if (this._array) {
                 let result: number[] = [];
-                this._evalutors.forEach((evalutor: cwCurveEvaluter) => {
+                this._evalutors.forEach((evalutor: CurveEvaluter) => {
                     result.push(evalutor.evalFirst());
                 });
                 return result;
@@ -257,7 +217,7 @@ export class cwSpline {
         if (this._evalutors.length > 0) {
             if (this._array) {
                 let result: number[] = [];
-                this._evalutors.forEach((evalutor: cwCurveEvaluter) => {
+                this._evalutors.forEach((evalutor: CurveEvaluter) => {
                     result.push(evalutor.evalLast());
                 });
                 return result;
@@ -267,5 +227,45 @@ export class cwSpline {
         } else {
             return 0;
         }
+    }
+    private initArray(type: SplineType, cp: { x: number; y: number[] }[], clamp: boolean) {
+        const numElements = cp[0].y.length;
+        if (numElements > 0) {
+            for (let i = 0; i < numElements; i++) {
+                let t = [];
+                for (let j = 0; j < cp.length; j++) {
+                    let val = cp[j].y.length > i ? cp[j].y[i] : 0;
+                    t.push({ x: cp[j].x, y: val });
+                }
+                switch (type) {
+                    case SplineType.STEP:
+                        this._evalutors.push(new StepEvaluter(t, clamp));
+                        break;
+                    case SplineType.LINEAR:
+                        this._evalutors.push(new CoLinearEvaluter(t, clamp));
+                        break;
+                    case SplineType.POLY:
+                    default:
+                        this._evalutors.push(new PolynomialsEvaluter(t, clamp));
+                        break;
+                }
+            }
+            this._array = true;
+        }
+    }
+    private initNonArray(type: SplineType, cp: IPoint2d[], clamp: boolean) {
+        switch (type) {
+            case SplineType.STEP:
+                this._evalutors.push(new StepEvaluter(cp, clamp));
+                break;
+            case SplineType.LINEAR:
+                this._evalutors.push(new CoLinearEvaluter(cp, clamp));
+                break;
+            case SplineType.POLY:
+            default:
+                this._evalutors.push(new PolynomialsEvaluter(cp, clamp));
+                break;
+        }
+        this._array = false;
     }
 }

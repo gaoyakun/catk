@@ -2,13 +2,13 @@ import * as point from './point';
 import * as shape from './boundingshape';
 import * as transform from './transform';
 
-export class cwBoundingSegment extends shape.cwBoundingShape {
+export class BoundingSegment extends shape.BoundingShape {
     public static readonly type: string = 'Segment';
     private _segment: point.ISegment2d;
     private _dirty: boolean;
     private _boundingbox: point.IRect2d;
     constructor(seg: point.ISegment2d = null) {
-        super(cwBoundingSegment.type);
+        super(BoundingSegment.type);
         this._segment = seg;
         this._dirty = !!seg;
         this._boundingbox = null;
@@ -42,6 +42,19 @@ export class cwBoundingSegment extends shape.cwBoundingShape {
         this._checkDirty();
         return this._boundingbox;
     }
+    getBoundingbox(): point.IRect2d {
+        return this.boundingbox;
+    }
+    getTransformedShape(transform: transform.Matrix2d): shape.BoundingShape {
+        if (!transform || !this._segment) {
+            return new BoundingSegment(this._segment);
+        } else {
+            return new BoundingSegment({
+                start: transform.transformPoint(this._segment.start),
+                end: transform.transformPoint(this._segment.end)
+            });
+        }
+    }
     private _checkDirty() {
         if (this._dirty) {
             this._dirty = false;
@@ -60,19 +73,6 @@ export class cwBoundingSegment extends shape.cwBoundingShape {
                 maxy = tmp;
             }
             this._boundingbox = { x: minx, y: miny, w: maxx - minx + 1, h: maxy - miny + 1 };
-        }
-    }
-    getBoundingbox(): point.IRect2d {
-        return this.boundingbox;
-    }
-    getTransformedShape(transform: transform.cwTransform2d): shape.cwBoundingShape {
-        if (!transform || !this._segment) {
-            return new cwBoundingSegment(this._segment);
-        } else {
-            return new cwBoundingSegment({
-                start: transform.transformPoint(this._segment.start),
-                end: transform.transformPoint(this._segment.end)
-            });
         }
     }
 }

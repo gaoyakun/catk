@@ -1,4 +1,4 @@
-export class cwTransform2d {
+export class Matrix2d {
     a: number;
     b: number;
     c: number;
@@ -14,31 +14,31 @@ export class cwTransform2d {
         this.f = 0;
     }
     static getIdentity() {
-        return new cwTransform2d();
+        return new Matrix2d();
     }
     static getTranslate(x: number, y: number) {
-        return new cwTransform2d().makeTranslate(x, y);
+        return new Matrix2d().makeTranslate(x, y);
     }
     static getScale(x: number, y: number) {
-        return new cwTransform2d().makeScale(x, y);
+        return new Matrix2d().makeScale(x, y);
     }
     static getRotate(theta: number) {
-        return new cwTransform2d().makeRotate(theta);
+        return new Matrix2d().makeRotate(theta);
     }
-    static transform(t1: cwTransform2d, t2: cwTransform2d) {
-        return new cwTransform2d().copyFrom(t1).transform(t2);
+    static transform(t1: Matrix2d, t2: Matrix2d) {
+        return new Matrix2d().copyFrom(t1).transform(t2);
     }
-    static translate(t: cwTransform2d, x: number, y: number) {
-        return new cwTransform2d().copyFrom(t).translate(x, y);
+    static translate(t: Matrix2d, x: number, y: number) {
+        return new Matrix2d().copyFrom(t).translate(x, y);
     }
-    static scale(t: cwTransform2d, x: number, y: number) {
-        return new cwTransform2d().copyFrom(t).scale(x, y);
+    static scale(t: Matrix2d, x: number, y: number) {
+        return new Matrix2d().copyFrom(t).scale(x, y);
     }
-    static rotate(t: cwTransform2d, theta: number) {
-        return new cwTransform2d().copyFrom(t).rotate(theta);
+    static rotate(t: Matrix2d, theta: number) {
+        return new Matrix2d().copyFrom(t).rotate(theta);
     }
-    static invert(t: cwTransform2d) {
-        return new cwTransform2d().copyFrom(t).invert();
+    static invert(t: Matrix2d) {
+        return new Matrix2d().copyFrom(t).invert();
     }
     set(a: number, b: number, c: number, d: number, e: number, f: number) {
         this.a = a;
@@ -63,10 +63,10 @@ export class cwTransform2d {
         let c = Math.cos(theta);
         return this.set(c, s, -s, c, 0.0, 0.0);
     }
-    copyFrom(otherTransform: cwTransform2d) {
+    copyFrom(otherTransform: Matrix2d) {
         return this.set(otherTransform.a, otherTransform.b, otherTransform.c, otherTransform.d, otherTransform.e, otherTransform.f);
     }
-    transform(right: cwTransform2d) {
+    transform(right: Matrix2d) {
         return this.set(
             this.a * right.a + this.c * right.b,
             this.b * right.a + this.d * right.b,
@@ -83,24 +83,24 @@ export class cwTransform2d {
         };
     }
     translate(x: number, y: number) {
-        return this.transform(cwTransform2d.getTranslate(x, y));
+        return this.transform(Matrix2d.getTranslate(x, y));
     }
     scale(x: number, y: number) {
-        return this.transform(cwTransform2d.getScale(x, y));
+        return this.transform(Matrix2d.getScale(x, y));
     }
     rotate(theta: number) {
-        return this.transform(cwTransform2d.getRotate(theta));
+        return this.transform(Matrix2d.getRotate(theta));
     }
     invert() {
-        let a00 = this.a,
-            a01 = this.b,
-            a02 = 0;
-        let a10 = this.c,
-            a11 = this.d,
-            a12 = 0;
-        let a20 = this.e,
-            a21 = this.f,
-            a22 = 1;
+        let a00 = this.a;
+        let a01 = this.b;
+        let a02 = 0;
+        let a10 = this.c;
+        let a11 = this.d;
+        let a12 = 0;
+        let a20 = this.e;
+        let a21 = this.f;
+        let a22 = 1;
         let b01 = a22 * a11 - a12 * a21;
         let b11 = -a22 * a10 + a12 * a20;
         let b21 = a21 * a10 - a11 * a20;

@@ -49,7 +49,7 @@ function fillCircle(imageData: Uint8ClampedArray, w: number, h: number, x0: numb
         buffer = new Uint8ClampedArray(imageData.length);
     }
     function plot(x: number, y: number) {
-        //setPixel (imageData, w, h, x, y, r, g, b);
+        // setPixel (imageData, w, h, x, y, r, g, b);
         const dx = x - x0;
         const dy = y - y0;
         const f = 1 - Math.sqrt((dx * dx + dy * dy) / (radius * radius));
@@ -58,20 +58,20 @@ function fillCircle(imageData: Uint8ClampedArray, w: number, h: number, x0: numb
         buffer[i + 1] = g * f;
         buffer[i + 2] = b * f;
         buffer[i + 3] = f * 255;
-        //const f = 1.0 - Math.max(Math.min(1.0, (dx * dx + dy * dy) / (radius * radius)), 0.0);
-        //blendPixel (imageData, w, h, x, y, r, g, b, f/255)
-        //setPixel (imageData, w, h, x, y, f * 255, f * 255, f * 255);
+        // const f = 1.0 - Math.max(Math.min(1.0, (dx * dx + dy * dy) / (radius * radius)), 0.0);
+        // blendPixel (imageData, w, h, x, y, r, g, b, f/255)
+        // setPixel (imageData, w, h, x, y, f * 255, f * 255, f * 255);
         // const r1 = Math.floor(255 * f);
         // const g1 = Math.floor(255 * f);
         // const b1 = Math.floor(255 * f);
         // setPixel (imageData, w, h, x, y, r1, g1, b1);
     }
-    let x = 0,
-        y = radius,
-        dx = 3,
-        dy = 2 - radius - radius,
-        d = 1 - radius,
-        xi;
+    let x = 0;
+    let y = radius;
+    let dx = 3;
+    let dy = 2 - radius - radius;
+    let d = 1 - radius;
+    let xi;
     plot(x + x0, y + y0);
     plot(x + x0, -y + y0);
     for (xi = -radius + x0; xi <= radius + x0; xi++) {
@@ -104,8 +104,8 @@ function fillCircle(imageData: Uint8ClampedArray, w: number, h: number, x0: numb
 function bresenhamDrawLine(imageData: Uint8ClampedArray, w: number, h: number, x1: number, y1: number, x2: number, y2: number, r: number, g: number, b: number) {
     let dx = Math.abs(x2 - x1);
     let dy = Math.abs(y2 - y1);
-    let yy = 0,
-        t;
+    let yy = 0;
+    let t;
     if (dx < dy) {
         yy = 1;
         t = x1;
@@ -120,11 +120,11 @@ function bresenhamDrawLine(imageData: Uint8ClampedArray, w: number, h: number, x
     }
     const ix = x2 > x1 ? 1 : -1;
     const iy = y2 > y1 ? 1 : -1;
-    let cx = x1,
-        cy = y1,
-        n2dy = dy * 2,
-        n2dydx = (dy - dx) * 2,
-        d = dy * 2 - dx;
+    let cx = x1;
+    let cy = y1;
+    let n2dy = dy * 2;
+    let n2dydx = (dy - dx) * 2;
+    let d = dy * 2 - dx;
     if (yy === 1) {
         while (cx !== x2) {
             if (d < 0) {
@@ -167,10 +167,10 @@ function parseColorRGBA(rgba: string): IColorRGBA {
     let c: number[] = [];
     let t = 0;
     const s = rgba.toLowerCase();
-    const d1 = '0'.charCodeAt(0),
-        d2 = '9'.charCodeAt(0);
-    const h1 = 'a'.charCodeAt(0),
-        h2 = 'f'.charCodeAt(0);
+    const d1 = '0'.charCodeAt(0);
+    const d2 = '9'.charCodeAt(0);
+    const h1 = 'a'.charCodeAt(0);
+    const h2 = 'f'.charCodeAt(0);
     for (let i = 1; i < rgba.length; i++) {
         const ch = rgba.charCodeAt(i);
         let val = 0;
@@ -200,7 +200,7 @@ function parseColorRGBA(rgba: string): IColorRGBA {
     return result;
 }
 
-export function cwDrawLine(context: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, color: string) {
+export function DrawLine(context: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, color: string) {
     const rgba = parseColorRGBA(color);
     const xmin = x1 > x2 ? x2 : x1;
     const ymin = y1 > y2 ? y2 : y1;
@@ -211,7 +211,7 @@ export function cwDrawLine(context: CanvasRenderingContext2D, x1: number, y1: nu
     context.putImageData(imageData, xmin, ymin);
 }
 
-export function cwFillCircle(context: CanvasRenderingContext2D, x0: number, y0: number, radius: number, color: string) {
+export function FillCircle(context: CanvasRenderingContext2D, x0: number, y0: number, radius: number, color: string) {
     const rgba = parseColorRGBA(color);
     const imageData = context.getImageData(x0 - radius, y0 - radius, 2 * radius + 1, 2 * radius + 1);
     fillCircle(imageData.data, imageData.width, imageData.height, radius, radius, radius, rgba.r, rgba.g, rgba.b);

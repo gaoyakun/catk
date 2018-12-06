@@ -1,9 +1,9 @@
-import { cwTransform2d } from './transform';
-import { cwBoundingShape } from './boundingshape';
-import { cwIntersectionTestShapePoint } from './intersect';
+import { Matrix2d } from './transform';
+import { BoundingShape } from './boundingshape';
+import { IntersectionTestShapePoint } from './intersect';
 
-export type cwCullResult = { [z: number]: { object: cwEventObserver; z: number; transform: cwTransform2d }[] };
-export type cwEventHandler<T extends cwEvent> = (evt: T) => void;
+export type CullResult = { [z: number]: { object: EventObserver; z: number; transform: Matrix2d }[] };
+export type EventHandler<T extends BaseEvent> = (evt: T) => void;
 export interface IRect {
     x: number;
     y: number;
@@ -11,12 +11,12 @@ export interface IRect {
     h: number;
 }
 
-export enum cwEventListenerOrder {
+export enum EventListenerOrder {
     FIRST = 1,
     LAST = 2
 }
 
-export class cwEvent {
+export class BaseEvent {
     readonly type: string;
     eaten: boolean;
     constructor(type: string) {
@@ -28,128 +28,128 @@ export class cwEvent {
     }
 }
 
-export class cwComponentBeforeAttachEvent extends cwEvent {
+export class EvtComponentBeforeAttach extends BaseEvent {
     static readonly type: string = '@componentBeforeAttach';
-    object: cwObject;
+    object: BaseObject;
     allow: boolean;
-    constructor(object: cwObject) {
-        super(cwComponentBeforeAttachEvent.type);
+    constructor(object: BaseObject) {
+        super(EvtComponentBeforeAttach.type);
         this.object = object;
         this.allow = true;
     }
 }
 
-export class cwComponentAttachedEvent extends cwEvent {
+export class EvtComponentAttached extends BaseEvent {
     static readonly type: string = '@componentAttached';
     constructor() {
-        super(cwComponentAttachedEvent.type);
+        super(EvtComponentAttached.type);
     }
 }
 
-export class cwComponentBeforeDetachEvent extends cwEvent {
+export class EvtComponentBeforeDetach extends BaseEvent {
     static readonly type: string = '@componentBeforeDetach';
     allow: boolean;
     constructor() {
-        super(cwComponentBeforeDetachEvent.type);
+        super(EvtComponentBeforeDetach.type);
         this.allow = true;
     }
 }
 
-export class cwComponentDetachedEvent extends cwEvent {
+export class EvtComponentDetached extends BaseEvent {
     static readonly type: string = '@componentDetached';
     constructor() {
-        super(cwComponentDetachedEvent.type);
+        super(EvtComponentDetached.type);
     }
 }
 
-export class cwUpdateEvent extends cwEvent {
+export class EvtUpdate extends BaseEvent {
     static readonly type: string = '@update';
     public readonly deltaTime: number;
     public readonly elapsedTime: number;
     public readonly frameStamp: number;
     constructor(deltaTime: number, elapsedTime: number, frameStamp: number) {
-        super(cwUpdateEvent.type);
+        super(EvtUpdate.type);
         this.deltaTime = deltaTime;
         this.elapsedTime = elapsedTime;
         this.frameStamp = frameStamp;
     }
 }
 
-export class cwCullEvent extends cwEvent {
+export class EvtCull extends BaseEvent {
     static readonly type: string = '@cull';
     readonly canvasWidth: number;
     readonly canvasHeight: number;
-    readonly result: cwCullResult;
+    readonly result: CullResult;
     constructor(w: number, h: number) {
-        super(cwCullEvent.type);
+        super(EvtCull.type);
         this.canvasWidth = w;
         this.canvasHeight = h;
         this.result = {};
     }
-    addObject(object: cwEventObserver, z: number, transform: cwTransform2d): void {
+    addObject(object: EventObserver, z: number, transform: Matrix2d): void {
         let objectList = this.result[z] || [];
         objectList.push({ object: object, z: z, transform: transform });
         this.result[z] = objectList;
     }
 }
 
-export class cwDrawEvent extends cwEvent {
+export class EvtDraw extends BaseEvent {
     static readonly type: string = '@draw';
-    readonly canvas: cwCanvas;
+    readonly canvas: Canvas;
     readonly z: number;
-    readonly transform: cwTransform2d;
-    constructor(canvas: cwCanvas, z: number, transform: cwTransform2d) {
-        super(cwDrawEvent.type);
+    readonly transform: Matrix2d;
+    constructor(canvas: Canvas, z: number, transform: Matrix2d) {
+        super(EvtDraw.type);
         this.canvas = canvas;
         this.z = z;
         this.transform = transform;
     }
 }
 
-export class cwHitTestEvent extends cwEvent {
+export class EvtHitTest extends BaseEvent {
     static readonly type: string = '@hittest';
     x: number;
     y: number;
     result: boolean;
     constructor(x: number, y: number) {
-        super(cwHitTestEvent.type);
+        super(EvtHitTest.type);
         this.x = x;
         this.y = y;
         this.result = false;
     }
 }
 
-export class cwGetBoundingShapeEvent extends cwEvent {
+export class EvtGetBoundingShape extends BaseEvent {
     static readonly type: string = '@getboundingshape';
-    shape?: cwBoundingShape;
+    shape?: BoundingShape;
     constructor() {
-        super(cwGetBoundingShapeEvent.type);
+        super(EvtGetBoundingShape.type);
     }
 }
 
-export class cwFrameEvent extends cwEvent {
+export class EvtFrame extends BaseEvent {
     static readonly type: string = '@frame';
     readonly deltaTime: number;
     readonly elapsedTime: number;
     readonly frameStamp: number;
     constructor(deltaTime: number, elapsedTime: number, frameStamp: number) {
-        super(cwFrameEvent.type);
+        super(EvtFrame.type);
         this.deltaTime = deltaTime;
         this.elapsedTime = elapsedTime;
         this.frameStamp = frameStamp;
     }
 }
 
-export class cwFocusEvent extends cwEvent {
+export class EvtFocus extends BaseEvent {
     static readonly type: string = '@focus';
     readonly focus: boolean;
     constructor(focus: boolean) {
-        super(cwFocusEvent.type);
+        super(EvtFocus.type);
         this.focus = focus;
     }
 }
 
-export class cwKeyboardEvent extends cwEvent {
+export class EvtKeyboard extends BaseEvent {
     readonly key: string;
     readonly keyCode: number;
     readonly shiftDown: boolean;
@@ -167,28 +167,28 @@ export class cwKeyboardEvent extends cwEvent {
     }
 }
 
-export class cwKeyDownEvent extends cwKeyboardEvent {
+export class EvtKeyDown extends EvtKeyboard {
     static readonly type: string = '@keydown';
     constructor(key: string, code: number, shift: boolean, alt: boolean, ctrl: boolean, meta: boolean) {
-        super(cwKeyDownEvent.type, key, code, shift, alt, ctrl, meta);
+        super(EvtKeyDown.type, key, code, shift, alt, ctrl, meta);
     }
 }
 
-export class cwKeyUpEvent extends cwKeyboardEvent {
+export class EvtKeyUp extends EvtKeyboard {
     static readonly type: string = '@keyup';
     constructor(key: string, code: number, shift: boolean, alt: boolean, ctrl: boolean, meta: boolean) {
-        super(cwKeyUpEvent.type, key, code, shift, alt, ctrl, meta);
+        super(EvtKeyUp.type, key, code, shift, alt, ctrl, meta);
     }
 }
 
-export class cwKeyPressEvent extends cwKeyboardEvent {
+export class EvtKeyPress extends EvtKeyboard {
     static readonly type: string = '@keypress';
     constructor(key: string, code: number, shift: boolean, alt: boolean, ctrl: boolean, meta: boolean) {
-        super(cwKeyPressEvent.type, key, code, shift, alt, ctrl, meta);
+        super(EvtKeyPress.type, key, code, shift, alt, ctrl, meta);
     }
 }
 
-export class cwMouseEvent extends cwEvent {
+export class EvtMouse extends BaseEvent {
     readonly x: number;
     readonly y: number;
     readonly button: number;
@@ -213,172 +213,172 @@ export class cwMouseEvent extends cwEvent {
     }
 }
 
-export class cwMouseDownEvent extends cwMouseEvent {
+export class EvtMouseDown extends EvtMouse {
     static readonly type: string = '@mousedown';
     constructor(x: number, y: number, button: number, shiftDown: boolean, altDown: boolean, ctrlDown: boolean, metaDown: boolean) {
-        super(cwMouseDownEvent.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown);
+        super(EvtMouseDown.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown);
     }
 }
 
-export class cwMouseUpEvent extends cwMouseEvent {
+export class EvtMouseUp extends EvtMouse {
     static readonly type: string = '@mouseup';
     constructor(x: number, y: number, button: number, shiftDown: boolean, altDown: boolean, ctrlDown: boolean, metaDown: boolean) {
-        super(cwMouseUpEvent.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown);
+        super(EvtMouseUp.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown);
     }
 }
 
-export class cwMouseMoveEvent extends cwMouseEvent {
+export class EvtMouseMove extends EvtMouse {
     static readonly type: string = '@mousemove';
     constructor(x: number, y: number, button: number, shiftDown: boolean, altDown: boolean, ctrlDown: boolean, metaDown: boolean) {
-        super(cwMouseMoveEvent.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown);
+        super(EvtMouseMove.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown);
     }
 }
 
-export class cwMouseEnterEvent extends cwEvent {
+export class EvtMouseEnter extends BaseEvent {
     static readonly type: string = '@mouseenter';
     constructor() {
-        super(cwMouseEnterEvent.type);
+        super(EvtMouseEnter.type);
     }
 }
 
-export class cwMouseLeaveEvent extends cwEvent {
+export class EvtMouseLeave extends BaseEvent {
     static readonly type: string = '@mouseleave';
     constructor() {
-        super(cwMouseLeaveEvent.type);
+        super(EvtMouseLeave.type);
     }
 }
 
-export class cwClickEvent extends cwMouseEvent {
+export class EvtClick extends EvtMouse {
     static readonly type: string = '@click';
     constructor(x: number, y: number, button: number, shiftDown: boolean, altDown: boolean, ctrlDown: boolean, metaDown: boolean) {
-        super(cwClickEvent.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown);
+        super(EvtClick.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown);
     }
 }
 
-export class cwDblClickEvent extends cwMouseEvent {
+export class EvtDblClick extends EvtMouse {
     static readonly type: string = '@dblclick';
     constructor(x: number, y: number, button: number, shiftDown: boolean, altDown: boolean, ctrlDown: boolean, metaDown: boolean) {
-        super(cwDblClickEvent.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown);
+        super(EvtDblClick.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown);
     }
 }
 
-export class cwDragBeginEvent extends cwMouseEvent {
+export class EvtDragBegin extends EvtMouse {
     static readonly type: string = '@dragbegin';
     data: any;
     constructor(x: number, y: number, button: number, shiftDown: boolean, altDown: boolean, ctrlDown: boolean, metaDown: boolean) {
-        super(cwDragBeginEvent.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown);
+        super(EvtDragBegin.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown);
         this.data = null;
     }
 }
 
-export class cwDragEndEvent extends cwMouseEvent {
+export class EvtDragEnd extends EvtMouse {
     static readonly type: string = '@dragend';
     data: any;
     constructor(x: number, y: number, button: number, shiftDown: boolean, altDown: boolean, ctrlDown: boolean, metaDown: boolean, data: any) {
-        super(cwDragEndEvent.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown);
+        super(EvtDragEnd.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown);
         this.data = data;
     }
 }
 
-export class cwDraggingEvent extends cwMouseEvent {
+export class EvtDragging extends EvtMouse {
     static readonly type: string = '@dragging';
     data: any;
     constructor(x: number, y: number, button: number, shiftDown: boolean, altDown: boolean, ctrlDown: boolean, metaDown: boolean, data: any) {
-        super(cwDraggingEvent.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown);
+        super(EvtDragging.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown);
         this.data = data;
     }
 }
 
-export class cwDragOverEvent extends cwMouseEvent {
+export class EvtDragOver extends EvtMouse {
     static readonly type: string = '@dragover';
-    readonly object: cwSceneObject;
+    readonly object: SceneObject;
     readonly data: any;
-    constructor(x: number, y: number, button: number, shiftDown: boolean, altDown: boolean, ctrlDown: boolean, metaDown: boolean, object: cwSceneObject, data: any) {
-        super(cwDragOverEvent.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown);
+    constructor(x: number, y: number, button: number, shiftDown: boolean, altDown: boolean, ctrlDown: boolean, metaDown: boolean, object: SceneObject, data: any) {
+        super(EvtDragOver.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown);
         this.object = object;
         this.data = data;
     }
 }
 
-export class cwDragDropEvent extends cwMouseEvent {
+export class EvtDragDrop extends EvtMouse {
     static readonly type: string = '@dragdrop';
-    readonly object: cwSceneObject;
+    readonly object: SceneObject;
     readonly data: any;
-    constructor(x: number, y: number, button: number, shiftDown: boolean, altDown: boolean, ctrlDown: boolean, metaDown: boolean, object: cwSceneObject, data: any) {
-        super(cwDragDropEvent.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown);
+    constructor(x: number, y: number, button: number, shiftDown: boolean, altDown: boolean, ctrlDown: boolean, metaDown: boolean, object: SceneObject, data: any) {
+        super(EvtDragDrop.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown);
         this.object = object;
         this.data = data;
     }
 }
 
-export class cwResizeEvent extends cwEvent {
+export class EvtResize extends BaseEvent {
     static readonly type: string = '@resize';
     constructor() {
-        super(cwResizeEvent.type);
+        super(EvtResize.type);
     }
 }
 
-export class cwCanvasResizeEvent extends cwEvent {
+export class EvtCanvasResize extends BaseEvent {
     static readonly type: string = '@canvasresize';
-    readonly view: cwSceneView;
-    constructor(view: cwSceneView) {
-        super(cwCanvasResizeEvent.type);
+    readonly view: SceneView;
+    constructor(view: SceneView) {
+        super(EvtCanvasResize.type);
         this.view = view;
     }
 }
 
-export class cwGetPropEvent extends cwEvent {
+export class EvtGetProp extends BaseEvent {
     static readonly type: string = '@getprop';
     readonly propName: string;
     propValue: any;
     constructor(propName: string) {
-        super(cwGetPropEvent.type);
+        super(EvtGetProp.type);
         this.propName = propName;
         this.propValue = undefined;
     }
 }
 
-export class cwSetPropEvent extends cwEvent {
+export class EvtSetProp extends BaseEvent {
     static readonly type: string = '@setprop';
     readonly propName: string;
     readonly propValue: any;
     constructor(propName: string, propValue: any) {
-        super(cwSetPropEvent.type);
+        super(EvtSetProp.type);
         this.propName = propName;
         this.propValue = propValue;
     }
 }
 
-export class cwSceneViewPageWillChangeEvent extends cwEvent {
+export class EvtSceneViewPageWillChange extends BaseEvent {
     static readonly type: string = '@scenviewpagewillchange';
-    readonly view: cwSceneView;
+    readonly view: SceneView;
     readonly oldPage: string;
     readonly newPage: string;
-    constructor(view: cwSceneView, oldPage: string, newPage: string) {
-        super(cwSceneViewPageWillChangeEvent.type);
+    constructor(view: SceneView, oldPage: string, newPage: string) {
+        super(EvtSceneViewPageWillChange.type);
         this.view = view;
         this.oldPage = oldPage;
         this.newPage = newPage;
     }
 }
 
-export class cwSceneViewPageChangedEvent extends cwEvent {
+export class EvtSceneViewPageChanged extends BaseEvent {
     static readonly type: string = '@sceneviewpagechanged';
-    readonly view: cwSceneView;
+    readonly view: SceneView;
     readonly oldPage: string;
     readonly newPage: string;
-    constructor(view: cwSceneView, oldPage: string, newPage: string) {
-        super(cwSceneViewPageChangedEvent.type);
+    constructor(view: SceneView, oldPage: string, newPage: string) {
+        super(EvtSceneViewPageChanged.type);
         this.view = view;
         this.oldPage = oldPage;
         this.newPage = newPage;
     }
 }
 
-export class cwSysInfo {
-    private static _isWindows = navigator.platform == 'Win32' || navigator.platform == 'Windows';
-    private static _isMac = navigator.platform == 'Mac68K' || navigator.platform == 'MacPPC' || navigator.platform == 'Macintosh' || navigator.platform == 'MacIntel';
-    private static _isX11 = navigator.platform == 'X11';
+export class EvtSysInfo {
+    private static _isWindows = navigator.platform === 'Win32' || navigator.platform === 'Windows';
+    private static _isMac = navigator.platform === 'Mac68K' || navigator.platform === 'MacPPC' || navigator.platform === 'Macintosh' || navigator.platform === 'MacIntel';
+    private static _isX11 = navigator.platform === 'X11';
     private static _isLinux = String(navigator.platform).indexOf('Linux') >= 0;
     private static _isAndroid = (navigator.userAgent.toLowerCase().match(/android/i) || []).indexOf('android') >= 0;
     static isWindows() {
@@ -398,76 +398,55 @@ export class cwSysInfo {
     }
 }
 
-export class cwEventObserver {
-    on<T extends cwEvent>(type: string, handler: cwEventHandler<T>, order?: cwEventListenerOrder): void {
-        cwApp.addEventListener(type, this, handler, order || cwEventListenerOrder.FIRST);
+export class EventObserver {
+    on<T extends BaseEvent>(type: string, handler: EventHandler<T>, order?: EventListenerOrder): void {
+        App.addEventListener(type, this, handler, order || EventListenerOrder.FIRST);
     }
-    off<T extends cwEvent>(type: string, handler?: cwEventHandler<T>): void {
-        cwApp.removeEventListener(type, this, handler);
+    off<T extends BaseEvent>(type: string, handler?: EventHandler<T>): void {
+        App.removeEventListener(type, this, handler);
     }
-    trigger(evt: cwEvent): void {
-        cwApp.triggerEvent(this, evt);
+    trigger(evt: BaseEvent): void {
+        App.triggerEvent(this, evt);
     }
-    triggerEx(evt: cwEvent): void {
+    triggerEx(evt: BaseEvent): void {
         this.trigger(evt);
     }
-    post<T extends cwEvent>(evt: T): void {
-        cwApp.postEvent(this, evt);
+    post<T extends BaseEvent>(evt: T): void {
+        App.postEvent(this, evt);
     }
 }
 
-type cwHitTestResult = cwSceneObject[];
-type cwEventHandlerList = { handler: cwEventHandler<any>; next: cwEventHandlerList };
-type cwEventHandlerEntry = { handlers: cwEventHandlerList; bindObject: any };
+type HitTestResult = SceneObject[];
+type EventHandlerList = { handler: EventHandler<any>; next: EventHandlerList };
+type EventHandlerEntry = { handlers: EventHandlerList; bindObject: any };
 
-export class cwApp {
-    private static eventQueue: { evt: cwEvent; target: any }[] = [];
-    private static eventListeners: { [eventType: string]: cwEventHandlerEntry[] } = {};
+export class App {
+    static elapsedTime = 0;
+    static deltaTime = 0;
+    private static eventQueue: { evt: BaseEvent; target: any }[] = [];
+    private static eventListeners: { [eventType: string]: EventHandlerEntry[] } = {};
     private static running = false;
     private static lastFrameTime = 0;
     private static firstFrameTime = 0;
     private static frameStamp = 0;
-    static elapsedTime = 0;
-    static deltaTime = 0;
-    private static processEvent(evt: cwEvent, target: any): void {
-        let handlerList = cwApp.eventListeners[evt.type];
-        if (handlerList) {
-            for (let i = 0; i < handlerList.length; i++) {
-                const entry = handlerList[i];
-                if (!target || entry.bindObject === target) {
-                    let h = entry.handlers;
-                    while (h) {
-                        h.handler.call(entry.bindObject, evt);
-                        if (evt.eaten) {
-                            break;
-                        }
-                        h = h.next;
-                    }
-                    if (target) {
-                        break;
-                    }
-                }
-            }
-        }
+    static postEvent(target: any, evt: BaseEvent): void {
+        App.eventQueue.push({ evt: evt, target: target });
     }
-    static postEvent(target: any, evt: cwEvent): void {
-        cwApp.eventQueue.push({ evt: evt, target: target });
-    }
-    static triggerEvent(target: any, evt: cwEvent): void {
-        cwApp.processEvent(evt, target);
+    static triggerEvent(target: any, evt: BaseEvent): void {
+        App.processEvent(evt, target);
     }
     static processPendingEvents(): void {
-        const events = cwApp.eventQueue;
-        cwApp.eventQueue = [];
-        events.forEach((evt: { evt: cwEvent; target: any }) => {
-            cwApp.processEvent(evt.evt, evt.target);
+        const events = App.eventQueue;
+        App.eventQueue = [];
+        events.forEach((evt: { evt: BaseEvent; target: any }) => {
+            App.processEvent(evt.evt, evt.target);
         });
     }
-    static addEventListener(eventType: string, bindObject: any, handler: cwEventHandler<any>, order: cwEventListenerOrder) {
-        let handlerList = cwApp.eventListeners[eventType] || [];
+    static addEventListener(eventType: string, bindObject: any, handler: EventHandler<any>, order: EventListenerOrder) {
+        let handlerList = App.eventListeners[eventType] || [];
         for (let i = 0; i < handlerList.length; i++) {
             if (handlerList[i].bindObject === bindObject) {
-                if (order == cwEventListenerOrder.FIRST) {
+                if (order === EventListenerOrder.FIRST) {
                     handlerList[i].handlers = {
                         handler: handler,
                         next: handlerList[i].handlers
@@ -491,8 +470,8 @@ export class cwApp {
         });
         this.eventListeners[eventType] = handlerList;
     }
-    static removeEventListener(eventType: string, bindObject: any, handler?: cwEventHandler<any>) {
-        let handlerList = cwApp.eventListeners[eventType] || [];
+    static removeEventListener(eventType: string, bindObject: any, handler?: EventHandler<any>) {
+        let handlerList = App.eventListeners[eventType] || [];
         for (let i = 0; i < handlerList.length; i++) {
             if (handlerList[i].bindObject === bindObject) {
                 if (handler) {
@@ -521,40 +500,61 @@ export class cwApp {
     }
     static run() {
         function frame(ts: number) {
-            if (cwApp.running) {
-                if (cwApp.lastFrameTime == 0) {
-                    cwApp.lastFrameTime = ts;
-                    cwApp.firstFrameTime = ts;
+            if (App.running) {
+                if (App.lastFrameTime === 0) {
+                    App.lastFrameTime = ts;
+                    App.firstFrameTime = ts;
                 }
-                cwApp.deltaTime = ts - cwApp.lastFrameTime;
-                cwApp.elapsedTime = ts - cwApp.firstFrameTime;
-                cwApp.lastFrameTime = ts;
-                cwApp.frameStamp++;
-                cwApp.processPendingEvents();
-                cwApp.triggerEvent(null, new cwFrameEvent(cwApp.deltaTime, cwApp.elapsedTime, cwApp.frameStamp));
-                if (cwApp.running) {
+                App.deltaTime = ts - App.lastFrameTime;
+                App.elapsedTime = ts - App.firstFrameTime;
+                App.lastFrameTime = ts;
+                App.frameStamp++;
+                App.processPendingEvents();
+                App.triggerEvent(null, new EvtFrame(App.deltaTime, App.elapsedTime, App.frameStamp));
+                if (App.running) {
                     requestAnimationFrame(frame);
                 }
             }
         }
-        if (!cwApp.running) {
-            cwApp.running = true;
-            cwApp.lastFrameTime = 0;
-            cwApp.firstFrameTime = 0;
-            cwApp.elapsedTime = 0;
-            cwApp.deltaTime = 0;
-            cwApp.frameStamp = 0;
+        if (!App.running) {
+            App.running = true;
+            App.lastFrameTime = 0;
+            App.firstFrameTime = 0;
+            App.elapsedTime = 0;
+            App.deltaTime = 0;
+            App.frameStamp = 0;
             requestAnimationFrame(frame);
         }
     }
     static stop() {
         this.running = false;
     }
+    private static processEvent(evt: BaseEvent, target: any): void {
+        let handlerList = App.eventListeners[evt.type];
+        if (handlerList) {
+            for (let i = 0; i < handlerList.length; i++) {
+                const entry = handlerList[i];
+                if (!target || entry.bindObject === target) {
+                    let h = entry.handlers;
+                    while (h) {
+                        h.handler.call(entry.bindObject, evt);
+                        if (evt.eaten) {
+                            break;
+                        }
+                        h = h.next;
+                    }
+                    if (target) {
+                        break;
+                    }
+                }
+            }
+        }
+    }
 }
 
-export class cwComponent extends cwEventObserver {
+export class Component extends EventObserver {
     readonly type: string;
-    object: cwObject | null;
+    object: BaseObject | null;
     constructor(type: string) {
         super();
         this.type = type;
@@ -565,110 +565,110 @@ export class cwComponent extends cwEventObserver {
     }
 }
 
-export class cwObject extends cwEventObserver {
-    private components: { [type: string]: cwComponent[] };
+export class BaseObject extends EventObserver {
+    private components: { [type: string]: Component[] };
     [name: string]: any;
     constructor() {
         super();
         this.components = {};
     }
     toString(): string {
-        return '<cwObject>';
+        return '<BaseObject>';
     }
-    addComponent(component: cwComponent): cwObject {
+    addComponent(component: Component): BaseObject {
         if (component.object === null) {
             let componentArray = this.components[component.type] || [];
             if (componentArray.indexOf(component) < 0) {
-                const ev = new cwComponentBeforeAttachEvent(this);
+                const ev = new EvtComponentBeforeAttach(this);
                 component.trigger(ev);
                 ev.object = null;
                 if (ev.allow) {
                     componentArray.push(component);
                     component.object = this;
-                    component.trigger(new cwComponentAttachedEvent());
+                    component.trigger(new EvtComponentAttached());
                 }
             }
             this.components[component.type] = componentArray;
         }
         return this;
     }
-    removeComponent(component: cwComponent): cwObject {
+    removeComponent(component: Component): BaseObject {
         if (component.object === this) {
             let index = this.components[component.type].indexOf(component);
             this.removeComponentByIndex(component.type, index);
         }
         return this;
     }
-    removeComponentByIndex(type: string, index: number): cwObject {
+    removeComponentByIndex(type: string, index: number): BaseObject {
         const components = this.components[type];
         if (components && index >= 0 && index < components.length) {
-            const ev = new cwComponentBeforeDetachEvent();
+            const ev = new EvtComponentBeforeDetach();
             components[index].trigger(ev);
             if (ev.allow) {
-                components[index].trigger(new cwComponentDetachedEvent());
+                components[index].trigger(new EvtComponentDetached());
                 components[index].object = null;
                 components.splice(index, 1);
             }
         }
         return this;
     }
-    removeComponentsByType(type: string): cwObject {
+    removeComponentsByType(type: string): BaseObject {
         const components = this.components[type];
         while (components && components.length > 0) {
             this.removeComponentByIndex(type, components.length - 1);
         }
         return this;
     }
-    removeAllComponents(): cwObject {
+    removeAllComponents(): BaseObject {
         Object.keys(this.components).forEach(type => {
             this.removeComponentsByType(type);
         });
         return this;
     }
-    getComponent(type: string, index: number = 0): cwComponent | null {
+    getComponent(type: string, index: number = 0): Component | null {
         let componentArray = this.components[type];
         if (componentArray === undefined || index < 0 || componentArray.length <= index) {
             return null;
         }
         return componentArray[index];
     }
-    getComponents(type: string): cwComponent[] {
+    getComponents(type: string): Component[] {
         return this.components[type];
     }
-    triggerEx(evt: cwEvent): void {
+    triggerEx(evt: BaseEvent): void {
         super.trigger(evt);
         for (const c in this.components) {
             if (this.components.hasOwnProperty(c)) {
-                this.components[c].forEach((comp: cwComponent) => {
+                this.components[c].forEach((comp: Component) => {
                     comp.trigger(evt);
                 });
             }
         }
     }
-    post(evt: cwEvent): void {
-        cwApp.postEvent(this, evt);
+    post(evt: BaseEvent): void {
+        App.postEvent(this, evt);
     }
 }
 
-export class cwSceneObject extends cwObject {
-    private _view: cwSceneView;
-    private _parent: cwSceneObject | null;
+export class SceneObject extends BaseObject {
+    private _view: SceneView;
+    private _parent: SceneObject | null;
     private _z: number;
     private _visible: boolean;
-    private _children: cwSceneObject[];
-    private _localTransform: cwTransform2d;
+    private _children: SceneObject[];
+    private _localTransform: Matrix2d;
     private _worldTranslation: { x: number; y: number } | null;
     private _worldRotation: number | null;
     private _worldScale: { x: number; y: number } | null;
     private _anchorPoint: { x: number; y: number };
-    constructor(parent: cwSceneObject = null) {
+    constructor(parent: SceneObject = null) {
         super();
         this._view = null;
         this._parent = null;
         this._z = 0;
         this._visible = true;
         this._children = [];
-        this._localTransform = new cwTransform2d();
+        this._localTransform = new Matrix2d();
         this._worldTranslation = null;
         this._worldRotation = null;
         this._worldScale = null;
@@ -676,14 +676,14 @@ export class cwSceneObject extends cwObject {
         if (parent) {
             parent.addChild(this);
         }
-        this.on(cwCullEvent.type, (evt: cwCullEvent) => {
+        this.on(EvtCull.type, (evt: EvtCull) => {
             evt.addObject(this, this.z, this.worldTransform);
         });
-        this.on(cwHitTestEvent.type, (evt: cwHitTestEvent) => {
+        this.on(EvtHitTest.type, (evt: EvtHitTest) => {
             const shape = this.boundingShape;
-            evt.result = shape ? cwIntersectionTestShapePoint(shape, { x: evt.x, y: evt.y }) : false;
+            evt.result = shape ? IntersectionTestShapePoint(shape, { x: evt.x, y: evt.y }) : false;
         });
-        this.on(cwGetPropEvent.type, (ev: cwGetPropEvent) => {
+        this.on(EvtGetProp.type, (ev: EvtGetProp) => {
             switch (ev.propName) {
                 case 'z':
                     ev.propValue = this.z;
@@ -719,7 +719,7 @@ export class cwSceneObject extends cwObject {
                     break;
             }
         });
-        this.on(cwSetPropEvent.type, (ev: cwSetPropEvent) => {
+        this.on(EvtSetProp.type, (ev: EvtSetProp) => {
             switch (ev.propName) {
                 case 'z':
                     this.z = ev.propValue as number;
@@ -730,7 +730,7 @@ export class cwSceneObject extends cwObject {
                     ev.eat();
                     break;
                 case 'transform':
-                    this.localTransform = ev.propValue as cwTransform2d;
+                    this.localTransform = ev.propValue as Matrix2d;
                     ev.eat();
                     break;
                 case 'translation':
@@ -753,14 +753,14 @@ export class cwSceneObject extends cwObject {
         });
     }
     get boundingShape() {
-        const ev = new cwGetBoundingShapeEvent();
+        const ev = new EvtGetBoundingShape();
         this.triggerEx(ev);
         return ev.shape || null;
     }
     get view() {
         return this._view;
     }
-    set view(v: cwSceneView) {
+    set view(v: SceneView) {
         this._view = v;
     }
     get parent() {
@@ -787,10 +787,10 @@ export class cwSceneObject extends cwObject {
     get localTransform() {
         return this._localTransform;
     }
-    setLocalTransform(t: cwTransform2d) {
+    setLocalTransform(t: Matrix2d) {
         this._localTransform = t;
     }
-    set localTransform(t: cwTransform2d) {
+    set localTransform(t: Matrix2d) {
         this.setLocalTransform(t);
     }
     get translation(): { x: number; y: number } {
@@ -820,8 +820,8 @@ export class cwSceneObject extends cwObject {
     set rotation(r: number) {
         this.setRotation(r);
     }
-    get worldTransform(): cwTransform2d {
-        let t = this.parent ? cwTransform2d.transform(this.parent.worldTransform, this.localTransform) : this.localTransform;
+    get worldTransform(): Matrix2d {
+        let t = this.parent ? Matrix2d.transform(this.parent.worldTransform, this.localTransform) : this.localTransform;
         if (this._worldTranslation !== null) {
             t.setTranslationPart(this._worldTranslation);
         }
@@ -878,7 +878,7 @@ export class cwSceneObject extends cwObject {
         this.worldRotation = null;
         this.worldScale = null;
         if (this.parent) {
-            this.localTransform = cwTransform2d.invert(this.parent.worldTransform).transform(wt);
+            this.localTransform = Matrix2d.invert(this.parent.worldTransform).transform(wt);
         } else {
             this.localTransform = wt;
         }
@@ -886,22 +886,22 @@ export class cwSceneObject extends cwObject {
         this.localTransform.f = Math.round(this.localTransform.f);
     }
     getLocalPoint(x: number, y: number): { x: number; y: number } {
-        return cwTransform2d.invert(this.worldTransform).transformPoint({ x: x, y: y });
+        return Matrix2d.invert(this.worldTransform).transformPoint({ x: x, y: y });
     }
-    childAt(index: number): cwSceneObject {
+    childAt(index: number): SceneObject {
         return this._children[index];
     }
-    forEachChild(callback: (child: cwSceneObject, index: number) => void) {
+    forEachChild(callback: (child: SceneObject, index: number) => void) {
         this._children.forEach(callback);
     }
-    addChild(child: cwSceneObject): void {
+    addChild(child: SceneObject): void {
         if (child._parent === null) {
             child._parent = this;
             child._view = this._view;
             this._children.push(child);
         }
     }
-    removeChild(child: cwSceneObject): void {
+    removeChild(child: SceneObject): void {
         if (child._parent === this) {
             let index = this._children.indexOf(child);
             this.removeChildAt(index);
@@ -931,15 +931,15 @@ export class cwSceneObject extends cwObject {
             this._parent.removeChild(this);
         }
     }
-    triggerRecursive(evt: cwEvent): void {
+    triggerRecursive(evt: BaseEvent): void {
         super.trigger(evt);
-        this.forEachChild((child: cwSceneObject, index: number) => {
+        this.forEachChild((child: SceneObject, index: number) => {
             child.triggerRecursive(evt);
         });
     }
-    triggerRecursiveEx(evt: cwEvent): void {
+    triggerRecursiveEx(evt: BaseEvent): void {
         super.triggerEx(evt);
-        this.forEachChild((child: cwSceneObject, index: number) => {
+        this.forEachChild((child: SceneObject, index: number) => {
             child.triggerRecursiveEx(evt);
         });
     }
@@ -950,25 +950,77 @@ export class cwSceneObject extends cwObject {
         this._view && this._view.captureObject === this && this._view.setCaptureObject(null);
     }
     toString(): string {
-        return '<cwSceneObject>';
+        return '<SceneObject>';
     }
 }
 
-export class cwScene extends cwObject {
-    private static capturedView: cwSceneView = null;
-    private static hoverView: cwSceneView = null;
-    private static focusView: cwSceneView = null;
-    private static views: cwSceneView[] = [];
+export class Scene extends BaseObject {
+    private static capturedView: SceneView = null;
+    private static hoverView: SceneView = null;
+    private static focusView: SceneView = null;
+    private static views: SceneView[] = [];
     private static clickTick: number = 0;
     private static dblClickTick: number = 0;
     private static clickTime: number = 400;
     private static dblclickTime: number = 400;
-    private static hitView(x: number, y: number): cwSceneView {
-        if (cwScene.capturedView !== null) {
-            return cwScene.capturedView;
+    public static addView(view: SceneView): boolean {
+        if (view && view.canvas && !Scene.findView(view.canvas.canvas)) {
+            Scene.views.push(view);
+            if (!Scene.focusView) {
+                Scene.setFocusView(view);
+            }
+            return true;
         }
-        for (let i = 0; i < cwScene.views.length; i++) {
-            const view = cwScene.views[i];
+        return false;
+    }
+    public static addCanvas(canvas: HTMLCanvasElement, doubleBuffer?: boolean): SceneView {
+        if (!Scene.findView(canvas)) {
+            const view = new SceneView(canvas, doubleBuffer === undefined ? false : doubleBuffer);
+            return Scene.addView(view) ? view : null;
+        }
+        return null;
+    }
+    public static setFocusView(view: SceneView) {
+        if (Scene.focusView !== view) {
+            if (Scene.focusView) {
+                Scene.focusView.trigger(new EvtFocus(false));
+            }
+            Scene.focusView = view;
+            if (Scene.focusView) {
+                Scene.focusView.trigger(new EvtFocus(true));
+            }
+        }
+    }
+    public static findView(canvas: HTMLCanvasElement): SceneView {
+        for (let i = 0; i < Scene.views.length; i++) {
+            if (Scene.views[i].canvas.canvas === canvas) {
+                return Scene.views[i];
+            }
+        }
+        return null;
+    }
+    public static removeView(canvas: HTMLCanvasElement): void {
+        for (let i = 0; i < Scene.views.length; i++) {
+            if (Scene.views[i].canvas.canvas === canvas) {
+                Scene.views.splice(i, 1);
+            }
+        }
+    }
+    public static setCapture(view: SceneView) {
+        Scene.capturedView = view;
+    }
+    public static init() {
+        Scene.initEventListeners();
+    }
+    public static done() {
+        Scene.doneEventListeners();
+    }
+    private static hitView(x: number, y: number): SceneView {
+        if (Scene.capturedView !== null) {
+            return Scene.capturedView;
+        }
+        for (let i = 0; i < Scene.views.length; i++) {
+            const view = Scene.views[i];
             const rc = view.canvas.viewport_rect;
             if (x >= rc.x && x < rc.x + rc.w && y >= rc.y && y < rc.y + rc.h) {
                 return view;
@@ -977,50 +1029,50 @@ export class cwScene extends cwObject {
         return null;
     }
     private static resizeHandler() {
-        let e = new cwResizeEvent();
-        cwScene.views.forEach((view: cwSceneView) => {
+        let e = new EvtResize();
+        Scene.views.forEach((view: SceneView) => {
             view.triggerEx(e);
         });
     }
     private static mouseDownHandler(ev: MouseEvent) {
-        cwScene.clickTick = Date.now();
-        let view = cwScene.hitView(ev.clientX, ev.clientY);
+        Scene.clickTick = Date.now();
+        let view = Scene.hitView(ev.clientX, ev.clientY);
         if (view !== null) {
             view.handleMouseDown(ev);
         }
     }
     private static mouseUpHandler(ev: MouseEvent) {
-        let view = cwScene.hitView(ev.clientX, ev.clientY);
+        let view = Scene.hitView(ev.clientX, ev.clientY);
         if (view !== null) {
             let tick = Date.now();
-            if (tick < cwScene.clickTick + cwScene.clickTime) {
-                if (tick < cwScene.dblClickTick + cwScene.dblclickTime) {
+            if (tick < Scene.clickTick + Scene.clickTime) {
+                if (tick < Scene.dblClickTick + Scene.dblclickTime) {
                     view.handleDblClick(ev);
-                    cwScene.dblClickTick = 0;
+                    Scene.dblClickTick = 0;
                 } else {
                     view.handleClick(ev);
-                    cwScene.dblClickTick = tick;
+                    Scene.dblClickTick = tick;
                 }
             } else {
-                cwScene.dblClickTick = 0;
+                Scene.dblClickTick = 0;
             }
             view.handleMouseUp(ev);
-            cwScene.clickTick = 0;
+            Scene.clickTick = 0;
         } else {
-            cwScene.clickTick = 0;
-            cwScene.dblClickTick = 0;
+            Scene.clickTick = 0;
+            Scene.dblClickTick = 0;
         }
     }
     private static mouseMoveHandler(ev: MouseEvent) {
-        let view = cwScene.hitView(ev.clientX, ev.clientY);
-        if (view != cwScene.hoverView) {
-            if (cwScene.hoverView) {
-                cwScene.hoverView.triggerEx(new cwMouseLeaveEvent());
-                cwScene.hoverView = null;
+        let view = Scene.hitView(ev.clientX, ev.clientY);
+        if (view !== Scene.hoverView) {
+            if (Scene.hoverView) {
+                Scene.hoverView.triggerEx(new EvtMouseLeave());
+                Scene.hoverView = null;
             }
             if (view !== null) {
-                cwScene.hoverView = view;
-                view.triggerEx(new cwMouseEnterEvent());
+                Scene.hoverView = view;
+                view.triggerEx(new EvtMouseEnter());
             }
         }
         if (view !== null) {
@@ -1030,95 +1082,43 @@ export class cwScene extends cwObject {
         }
     }
     private static keyDownHandler(ev: KeyboardEvent) {
-        if (cwScene.focusView) {
-            cwScene.focusView.trigger(new cwKeyDownEvent(ev.key, ev.keyCode, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+        if (Scene.focusView) {
+            Scene.focusView.trigger(new EvtKeyDown(ev.key, ev.keyCode, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
         }
     }
     private static keyUpHandler(ev: KeyboardEvent) {
-        if (cwScene.focusView) {
-            cwScene.focusView.trigger(new cwKeyUpEvent(ev.key, ev.keyCode, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+        if (Scene.focusView) {
+            Scene.focusView.trigger(new EvtKeyUp(ev.key, ev.keyCode, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
         }
     }
     private static keyPressHandler(ev: KeyboardEvent) {
-        if (cwScene.focusView) {
-            cwScene.focusView.trigger(new cwKeyPressEvent(ev.key, ev.keyCode, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+        if (Scene.focusView) {
+            Scene.focusView.trigger(new EvtKeyPress(ev.key, ev.keyCode, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
         }
     }
     private static initEventListeners(): void {
-        window.addEventListener('resize', cwScene.resizeHandler);
-        window.addEventListener(window.onpointerdown ? 'pointerdown' : 'mousedown', cwScene.mouseDownHandler);
-        window.addEventListener(window.onpointerup ? 'pointerup' : 'mouseup', cwScene.mouseUpHandler);
-        window.addEventListener(window.onpointermove ? 'pointermove' : 'mousemove', cwScene.mouseMoveHandler);
-        window.addEventListener('keydown', cwScene.keyDownHandler);
-        window.addEventListener('keyup', cwScene.keyUpHandler);
-        window.addEventListener('keypress', cwScene.keyPressHandler);
+        window.addEventListener('resize', Scene.resizeHandler);
+        window.addEventListener(window.onpointerdown ? 'pointerdown' : 'mousedown', Scene.mouseDownHandler);
+        window.addEventListener(window.onpointerup ? 'pointerup' : 'mouseup', Scene.mouseUpHandler);
+        window.addEventListener(window.onpointermove ? 'pointermove' : 'mousemove', Scene.mouseMoveHandler);
+        window.addEventListener('keydown', Scene.keyDownHandler);
+        window.addEventListener('keyup', Scene.keyUpHandler);
+        window.addEventListener('keypress', Scene.keyPressHandler);
     }
     private static doneEventListeners(): void {
-        window.removeEventListener('resize', cwScene.resizeHandler);
-        window.removeEventListener(window.onpointerdown ? 'pointerdown' : 'mousedown', cwScene.mouseDownHandler);
-        window.removeEventListener(window.onpointerup ? 'pointerup' : 'mouseup', cwScene.mouseUpHandler);
-        window.removeEventListener(window.onpointermove ? 'pointermove' : 'mousemove', cwScene.mouseMoveHandler);
-        window.removeEventListener('keydown', cwScene.keyDownHandler);
-        window.removeEventListener('keyup', cwScene.keyUpHandler);
-        window.removeEventListener('keypress', cwScene.keyPressHandler);
-    }
-    public static addView(view: cwSceneView): boolean {
-        if (view && view.canvas && !cwScene.findView(view.canvas.canvas)) {
-            cwScene.views.push(view);
-            if (!cwScene.focusView) {
-                cwScene.setFocusView(view);
-            }
-            return true;
-        }
-        return false;
-    }
-    public static addCanvas(canvas: HTMLCanvasElement, doubleBuffer?: boolean): cwSceneView {
-        if (!cwScene.findView(canvas)) {
-            const view = new cwSceneView(canvas, doubleBuffer === undefined ? false : doubleBuffer);
-            return cwScene.addView(view) ? view : null;
-        }
-        return null;
-    }
-    public static setFocusView(view: cwSceneView) {
-        if (cwScene.focusView != view) {
-            if (cwScene.focusView) {
-                cwScene.focusView.trigger(new cwFocusEvent(false));
-            }
-            cwScene.focusView = view;
-            if (cwScene.focusView) {
-                cwScene.focusView.trigger(new cwFocusEvent(true));
-            }
-        }
-    }
-    public static findView(canvas: HTMLCanvasElement): cwSceneView {
-        for (let i = 0; i < cwScene.views.length; i++) {
-            if (cwScene.views[i].canvas.canvas === canvas) {
-                return cwScene.views[i];
-            }
-        }
-        return null;
-    }
-    public static removeView(canvas: HTMLCanvasElement): void {
-        for (let i = 0; i < cwScene.views.length; i++) {
-            if (cwScene.views[i].canvas.canvas === canvas) {
-                cwScene.views.splice(i, 1);
-            }
-        }
-    }
-    public static setCapture(view: cwSceneView) {
-        cwScene.capturedView = view;
-    }
-    public static init() {
-        cwScene.initEventListeners();
-    }
-    public static done() {
-        cwScene.doneEventListeners();
+        window.removeEventListener('resize', Scene.resizeHandler);
+        window.removeEventListener(window.onpointerdown ? 'pointerdown' : 'mousedown', Scene.mouseDownHandler);
+        window.removeEventListener(window.onpointerup ? 'pointerup' : 'mouseup', Scene.mouseUpHandler);
+        window.removeEventListener(window.onpointermove ? 'pointermove' : 'mousemove', Scene.mouseMoveHandler);
+        window.removeEventListener('keydown', Scene.keyDownHandler);
+        window.removeEventListener('keyup', Scene.keyUpHandler);
+        window.removeEventListener('keypress', Scene.keyPressHandler);
     }
 }
 
 export interface ISceneViewPage {
     name: string;
-    rootNode: cwSceneObject;
+    rootNode: SceneObject;
     bkImageUrl: string;
     bkImageRepeat: string;
     bkImageAttachment: string;
@@ -1126,20 +1126,57 @@ export interface ISceneViewPage {
     bkColor: string;
 }
 
-export class cwSceneView extends cwObject {
-    private _canvas: cwCanvas;
+export class SceneView extends BaseObject {
+    private _canvas: Canvas;
     private _pages: { [name: string]: ISceneViewPage };
     private _currentPage: string;
-    private _captureObject: cwSceneObject;
-    private _hitObjects: cwSceneObject[];
-    private genPageName(): string {
-        let n = 1;
-        while (true) {
-            const name = `page${n++}`;
-            if (!(name in this._pages)) {
-                return name;
+    private _captureObject: SceneObject;
+    private _hitObjects: SceneObject[];
+    constructor(canvas: HTMLCanvasElement, doubleBuffer: boolean = false) {
+        super();
+        this._canvas = new Canvas(this, canvas, doubleBuffer);
+        this._captureObject = null;
+        this._hitObjects = [];
+        this._currentPage = null;
+        this._pages = {};
+        const rootNode = new SceneObject();
+        rootNode.view = this;
+        this.addPage({
+            name: 'page1',
+            rootNode: rootNode,
+            bkImageUrl: null,
+            bkImageRepeat: null,
+            bkImageSize: null,
+            bkImageAttachment: null,
+            bkColor: '#ffffff'
+        });
+        this.selectPage('page1');
+
+        this.on(EvtFrame.type, (ev: EvtFrame) => {
+            let updateEvent = new EvtUpdate(ev.deltaTime, ev.elapsedTime, ev.frameStamp);
+            if (this.rootNode) {
+                this.rootNode.triggerRecursiveEx(updateEvent);
             }
-        }
+            this.canvas.clear();
+            this.triggerEx(new EvtDraw(this.canvas, 0, new Matrix2d()));
+            this.canvas.flip();
+        });
+        this.on(EvtDraw.type, (ev: EvtDraw) => {
+            if (this.rootNode) {
+                let cullEvent = new EvtCull(ev.canvas.width, ev.canvas.height);
+                this.rootNode.triggerRecursiveEx(cullEvent);
+                for (let i in cullEvent.result) {
+                    let group = cullEvent.result[i];
+                    for (let j = 0; j < group.length; j++) {
+                        ev.canvas.context.save();
+                        ev.canvas.applyTransform(group[j].transform);
+                        ev.canvas.context.translate(0.5, 0.5);
+                        group[j].object.triggerEx(new EvtDraw(ev.canvas, group[j].z, group[j].transform));
+                        ev.canvas.context.restore();
+                    }
+                }
+            }
+        });
     }
     forEachPage(callback: (page: ISceneViewPage) => void) {
         if (callback) {
@@ -1207,12 +1244,12 @@ export class cwSceneView extends cwObject {
     selectPage(name: string) {
         const oldName = this._currentPage;
         if (name in this._pages && name !== oldName) {
-            cwApp.triggerEvent(null, new cwSceneViewPageWillChangeEvent(this, oldName, name));
+            App.triggerEvent(null, new EvtSceneViewPageWillChange(this, oldName, name));
             this._currentPage = name;
             this._captureObject = null;
             this._hitObjects.length = 0;
             this.applyPage(this._pages[this._currentPage]);
-            cwApp.triggerEvent(null, new cwSceneViewPageChangedEvent(this, oldName, name));
+            App.triggerEvent(null, new EvtSceneViewPageChanged(this, oldName, name));
         }
     }
     renamePage(oldName: string, newName: string) {
@@ -1274,20 +1311,11 @@ export class cwSceneView extends cwObject {
             this.applyPage(this._pages[this._currentPage]);
         }
     }
-    private applyPage(page: ISceneViewPage) {
-        const color = page.bkColor || '';
-        const url = (page.bkImageUrl && `url(${page.bkImageUrl})`) || '';
-        const bkrepeat = page.bkImageRepeat || 'repeat';
-        const bkattach = page.bkImageAttachment || 'scroll';
-        const bkpos = '0% 0%';
-        const bksize = page.bkImageSize || 'auto';
-        this._canvas.canvas.style.background = `${color} ${url} ${bkrepeat} ${bkattach} ${bkpos} / ${bksize}`;
-    }
     public updateHitObjects(x: number, y: number) {
         const hitTestResult = this.hitTest(x, y);
         for (let i = 0; i < this._hitObjects.length; ) {
             if (hitTestResult.indexOf(this._hitObjects[i]) < 0) {
-                this._hitObjects[i].trigger(new cwMouseLeaveEvent());
+                this._hitObjects[i].trigger(new EvtMouseLeave());
                 this._hitObjects.splice(i, 1);
             } else {
                 i++;
@@ -1295,86 +1323,37 @@ export class cwSceneView extends cwObject {
         }
         for (let i = 0; i < hitTestResult.length; i++) {
             if (this._hitObjects.indexOf(hitTestResult[i]) < 0) {
-                hitTestResult[i].trigger(new cwMouseEnterEvent());
+                hitTestResult[i].trigger(new EvtMouseEnter());
             }
         }
         this._hitObjects = hitTestResult;
         this._hitObjects.push(this.rootNode);
     }
-    private isValidObject(object: cwSceneObject) {
-        return object && object.view === this;
-    }
-    constructor(canvas: HTMLCanvasElement, doubleBuffer: boolean = false) {
-        super();
-        this._canvas = new cwCanvas(this, canvas, doubleBuffer);
-        this._captureObject = null;
-        this._hitObjects = [];
-        this._currentPage = null;
-        this._pages = {};
-        const rootNode = new cwSceneObject();
-        rootNode.view = this;
-        this.addPage({
-            name: 'page1',
-            rootNode: rootNode,
-            bkImageUrl: null,
-            bkImageRepeat: null,
-            bkImageSize: null,
-            bkImageAttachment: null,
-            bkColor: '#ffffff'
-        });
-        this.selectPage('page1');
-
-        this.on(cwFrameEvent.type, (ev: cwFrameEvent) => {
-            let updateEvent = new cwUpdateEvent(ev.deltaTime, ev.elapsedTime, ev.frameStamp);
-            if (this.rootNode) {
-                this.rootNode.triggerRecursiveEx(updateEvent);
-            }
-            this.canvas.clear();
-            this.triggerEx(new cwDrawEvent(this.canvas, 0, new cwTransform2d()));
-            this.canvas.flip();
-        });
-        this.on(cwDrawEvent.type, (ev: cwDrawEvent) => {
-            if (this.rootNode) {
-                let cullEvent = new cwCullEvent(ev.canvas.width, ev.canvas.height);
-                this.rootNode.triggerRecursiveEx(cullEvent);
-                for (let i in cullEvent.result) {
-                    let group = cullEvent.result[i];
-                    for (let j = 0; j < group.length; j++) {
-                        ev.canvas.context.save();
-                        ev.canvas.applyTransform(group[j].transform);
-                        ev.canvas.context.translate(0.5, 0.5);
-                        group[j].object.triggerEx(new cwDrawEvent(ev.canvas, group[j].z, group[j].transform));
-                        ev.canvas.context.restore();
-                    }
-                }
-            }
-        });
-    }
-    get rootNode(): cwSceneObject {
+    get rootNode(): SceneObject {
         return this._pages[this._currentPage].rootNode;
     }
-    set rootNode(node: cwSceneObject) {
+    set rootNode(node: SceneObject) {
         if (this._pages[this._currentPage].rootNode !== node) {
             this._pages[this._currentPage].rootNode = node;
             this._hitObjects.length = 0;
             this._captureObject = null;
         }
     }
-    get canvas(): cwCanvas {
+    get canvas(): Canvas {
         return this._canvas;
     }
-    get captureObject(): cwSceneObject {
+    get captureObject(): SceneObject {
         return this._captureObject;
     }
-    get hitObjects(): cwSceneObject[] {
+    get hitObjects(): SceneObject[] {
         return this._hitObjects;
     }
-    setCaptureObject(object: cwSceneObject): void {
+    setCaptureObject(object: SceneObject): void {
         this._captureObject = object;
     }
     handleMouseDown(ev: MouseEvent): void {
         const rc = this.canvas.viewport_rect;
-        const e = new cwMouseDownEvent(ev.clientX - rc.x, ev.clientY - rc.y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
+        const e = new EvtMouseDown(ev.clientX - rc.x, ev.clientY - rc.y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
         if (this.isValidObject(this._captureObject)) {
             this._captureObject.triggerEx(e);
         } else {
@@ -1394,7 +1373,7 @@ export class cwSceneView extends cwObject {
     }
     handleMouseUp(ev: MouseEvent): void {
         const rc = this.canvas.viewport_rect;
-        const e = new cwMouseUpEvent(ev.clientX - rc.x, ev.clientY - rc.y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
+        const e = new EvtMouseUp(ev.clientX - rc.x, ev.clientY - rc.y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
         if (this.isValidObject(this._captureObject)) {
             this._captureObject.triggerEx(e);
         } else {
@@ -1414,7 +1393,7 @@ export class cwSceneView extends cwObject {
     }
     handleMouseMove(ev: MouseEvent): void {
         const rc = this.canvas.viewport_rect;
-        const e = new cwMouseMoveEvent(ev.clientX - rc.x, ev.clientY - rc.y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
+        const e = new EvtMouseMove(ev.clientX - rc.x, ev.clientY - rc.y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
         if (this.isValidObject(this._captureObject)) {
             this._captureObject.triggerEx(e);
         } else {
@@ -1434,7 +1413,7 @@ export class cwSceneView extends cwObject {
     }
     handleClick(ev: MouseEvent): void {
         const rc = this.canvas.viewport_rect;
-        const e = new cwClickEvent(ev.clientX - rc.x, ev.clientY - rc.y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
+        const e = new EvtClick(ev.clientX - rc.x, ev.clientY - rc.y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
         for (let i = 0; i < this._hitObjects.length; i++) {
             const obj = this._hitObjects[i];
             if (this.isValidObject(obj)) {
@@ -1450,7 +1429,7 @@ export class cwSceneView extends cwObject {
     }
     handleDblClick(ev: MouseEvent): void {
         const rc = this.canvas.viewport_rect;
-        const e = new cwDblClickEvent(ev.clientX - rc.x, ev.clientY - rc.y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
+        const e = new EvtDblClick(ev.clientX - rc.x, ev.clientY - rc.y, ev.button, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey);
         for (let i = 0; i < this._hitObjects.length; i++) {
             const obj = this._hitObjects[i];
             if (this.isValidObject(obj)) {
@@ -1465,35 +1444,56 @@ export class cwSceneView extends cwObject {
         }
     }
     setFocus(): void {
-        cwScene.setFocusView(this);
+        Scene.setFocusView(this);
     }
-    hitTest(x: number, y: number): cwHitTestResult {
-        function hitTest_r(object: cwSceneObject, result: cwHitTestResult) {
-            const pos = cwTransform2d.invert(object.worldTransform).transformPoint({ x: x, y: y });
-            const e = new cwHitTestEvent(pos.x, pos.y);
+    hitTest(x: number, y: number): HitTestResult {
+        function hitTest_r(object: SceneObject, result: HitTestResult) {
+            const pos = Matrix2d.invert(object.worldTransform).transformPoint({ x: x, y: y });
+            const e = new EvtHitTest(pos.x, pos.y);
             object.triggerEx(e);
             if (e.result) {
                 result.push(object);
             }
-            object.forEachChild((child: cwSceneObject, index: number) => {
+            object.forEachChild((child: SceneObject, index: number) => {
                 hitTest_r(child, result);
             });
         }
-        const hitTestResult: cwHitTestResult = [];
+        const hitTestResult: HitTestResult = [];
         if (this.rootNode) {
             hitTest_r(this.rootNode, hitTestResult);
             hitTestResult.sort(
-                (a: cwSceneObject, b: cwSceneObject): number => {
+                (a: SceneObject, b: SceneObject): number => {
                     return b.z - a.z;
                 }
             );
         }
         return hitTestResult;
     }
+    private isValidObject(object: SceneObject) {
+        return object && object.view === this;
+    }
+    private genPageName(): string {
+        let n = 1;
+        while (true) {
+            const name = `page${n++}`;
+            if (!(name in this._pages)) {
+                return name;
+            }
+        }
+    }
+    private applyPage(page: ISceneViewPage) {
+        const color = page.bkColor || '';
+        const url = (page.bkImageUrl && `url(${page.bkImageUrl})`) || '';
+        const bkrepeat = page.bkImageRepeat || 'repeat';
+        const bkattach = page.bkImageAttachment || 'scroll';
+        const bkpos = '0% 0%';
+        const bksize = page.bkImageSize || 'auto';
+        this._canvas.canvas.style.background = `${color} ${url} ${bkrepeat} ${bkattach} ${bkpos} / ${bksize}`;
+    }
 }
 
 export function ResizeSensor(element: HTMLElement, callback: Function) {
-    let zIndex = parseInt(window.getComputedStyle(element).zIndex);
+    let zIndex = parseInt(window.getComputedStyle(element).zIndex, 10);
     if (isNaN(zIndex)) {
         zIndex = 0;
     }
@@ -1558,7 +1558,7 @@ export function ResizeSensor(element: HTMLElement, callback: Function) {
         let newWidth = size.width;
         let newHeight = size.height;
 
-        if (newWidth != currentWidth || newHeight != currentHeight) {
+        if (newWidth !== currentWidth || newHeight !== currentHeight) {
             currentWidth = newWidth;
             currentHeight = newHeight;
 
@@ -1572,29 +1572,16 @@ export function ResizeSensor(element: HTMLElement, callback: Function) {
     shrink.addEventListener('scroll', onScroll);
 }
 
-export class cwCanvas extends cwObject {
+export class Canvas extends BaseObject {
     private readonly _canvas: HTMLCanvasElement;
-    private _view: cwSceneView;
+    private _view: SceneView;
     private _buffer: HTMLCanvasElement;
     private _screenCtx: CanvasRenderingContext2D;
     private _offscreenCtx: CanvasRenderingContext2D;
     private _width: number;
     private _height: number;
     private _doubleBuffer: boolean;
-    private adjustCanvasSize(canvas: HTMLCanvasElement) {
-        const computedStyle = window.getComputedStyle(canvas.parentElement);
-        this._width = canvas.parentElement.clientWidth - parseFloat(computedStyle.paddingLeft) - parseFloat(computedStyle.paddingRight);
-        this._height = canvas.parentElement.clientHeight - parseFloat(computedStyle.paddingTop) - parseFloat(computedStyle.paddingBottom);
-        this._canvas.width = this._width;
-        this._canvas.height = this._height;
-        this._screenCtx = this._canvas.getContext('2d');
-        this._buffer = document.createElement('canvas');
-        this._buffer.width = this._width;
-        this._buffer.height = this._height;
-        this._offscreenCtx = this._buffer.getContext('2d');
-        cwApp.triggerEvent(null, new cwCanvasResizeEvent(this._view));
-    }
-    constructor(view: cwSceneView, canvas: HTMLCanvasElement, doubleBuffer: boolean = false) {
+    constructor(view: SceneView, canvas: HTMLCanvasElement, doubleBuffer: boolean = false) {
         super();
         this._view = view;
         this._canvas = canvas;
@@ -1638,12 +1625,25 @@ export class cwCanvas extends cwObject {
             this._screenCtx.clearRect(x, y, w, h);
         }
     }
-    applyTransform(transform: cwTransform2d): void {
+    applyTransform(transform: Matrix2d): void {
         this.context.setTransform(transform.a, transform.b, transform.c, transform.d, Math.round(transform.e), Math.round(transform.f));
     }
     flip(): void {
         if (this._doubleBuffer) {
             this._screenCtx.drawImage(this._buffer, 0, 0);
         }
+    }
+    private adjustCanvasSize(canvas: HTMLCanvasElement) {
+        const computedStyle = window.getComputedStyle(canvas.parentElement);
+        this._width = canvas.parentElement.clientWidth - parseFloat(computedStyle.paddingLeft) - parseFloat(computedStyle.paddingRight);
+        this._height = canvas.parentElement.clientHeight - parseFloat(computedStyle.paddingTop) - parseFloat(computedStyle.paddingBottom);
+        this._canvas.width = this._width;
+        this._canvas.height = this._height;
+        this._screenCtx = this._canvas.getContext('2d');
+        this._buffer = document.createElement('canvas');
+        this._buffer.width = this._width;
+        this._buffer.height = this._height;
+        this._offscreenCtx = this._buffer.getContext('2d');
+        App.triggerEvent(null, new EvtCanvasResize(this._view));
     }
 }
