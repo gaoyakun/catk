@@ -1,2 +1,2 @@
 # catk
-Html5 canvas toolkit
+CATK is a simple library for working with html5 canvas.
