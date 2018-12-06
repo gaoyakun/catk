@@ -430,20 +430,20 @@ export class App {
     private static firstFrameTime = 0;
     private static frameStamp = 0;
     static postEvent(target: any, evt: BaseEvent): void {
-        App.eventQueue.push({ evt: evt, target: target });
+        this.eventQueue.push({ evt: evt, target: target });
     }
     static triggerEvent(target: any, evt: BaseEvent): void {
-        App.processEvent(evt, target);
+        this.processEvent(evt, target);
     }
     static processPendingEvents(): void {
-        const events = App.eventQueue;
-        App.eventQueue = [];
+        const events = this.eventQueue;
+        this.eventQueue = [];
         events.forEach((evt: { evt: BaseEvent; target: any }) => {
-            App.processEvent(evt.evt, evt.target);
+            this.processEvent(evt.evt, evt.target);
         });
     }
     static addEventListener(eventType: string, bindObject: any, handler: EventHandler<any>, order: EventListenerOrder) {
-        let handlerList = App.eventListeners[eventType] || [];
+        let handlerList = this.eventListeners[eventType] || [];
         for (let i = 0; i < handlerList.length; i++) {
             if (handlerList[i].bindObject === bindObject) {
                 if (order === EventListenerOrder.FIRST) {
@@ -471,7 +471,7 @@ export class App {
         this.eventListeners[eventType] = handlerList;
     }
     static removeEventListener(eventType: string, bindObject: any, handler?: EventHandler<any>) {
-        let handlerList = App.eventListeners[eventType] || [];
+        let handlerList = this.eventListeners[eventType] || [];
         for (let i = 0; i < handlerList.length; i++) {
             if (handlerList[i].bindObject === bindObject) {
                 if (handler) {
@@ -516,13 +516,13 @@ export class App {
                 }
             }
         }
-        if (!App.running) {
-            App.running = true;
-            App.lastFrameTime = 0;
-            App.firstFrameTime = 0;
-            App.elapsedTime = 0;
-            App.deltaTime = 0;
-            App.frameStamp = 0;
+        if (!this.running) {
+            this.running = true;
+            this.lastFrameTime = 0;
+            this.firstFrameTime = 0;
+            this.elapsedTime = 0;
+            this.deltaTime = 0;
+            this.frameStamp = 0;
             requestAnimationFrame(frame);
         }
     }
@@ -530,7 +530,7 @@ export class App {
         this.running = false;
     }
     private static processEvent(evt: BaseEvent, target: any): void {
-        let handlerList = App.eventListeners[evt.type];
+        let handlerList = this.eventListeners[evt.type];
         if (handlerList) {
             for (let i = 0; i < handlerList.length; i++) {
                 const entry = handlerList[i];
@@ -964,63 +964,63 @@ export class Scene extends BaseObject {
     private static clickTime: number = 400;
     private static dblclickTime: number = 400;
     public static addView(view: SceneView): boolean {
-        if (view && view.canvas && !Scene.findView(view.canvas.canvas)) {
-            Scene.views.push(view);
-            if (!Scene.focusView) {
-                Scene.setFocusView(view);
+        if (view && view.canvas && !this.findView(view.canvas.canvas)) {
+            this.views.push(view);
+            if (!this.focusView) {
+                this.setFocusView(view);
             }
             return true;
         }
         return false;
     }
     public static addCanvas(canvas: HTMLCanvasElement, doubleBuffer?: boolean): SceneView {
-        if (!Scene.findView(canvas)) {
+        if (!this.findView(canvas)) {
             const view = new SceneView(canvas, doubleBuffer === undefined ? false : doubleBuffer);
-            return Scene.addView(view) ? view : null;
+            return this.addView(view) ? view : null;
         }
         return null;
     }
     public static setFocusView(view: SceneView) {
-        if (Scene.focusView !== view) {
-            if (Scene.focusView) {
-                Scene.focusView.trigger(new EvtFocus(false));
+        if (this.focusView !== view) {
+            if (this.focusView) {
+                this.focusView.trigger(new EvtFocus(false));
             }
-            Scene.focusView = view;
-            if (Scene.focusView) {
-                Scene.focusView.trigger(new EvtFocus(true));
+            this.focusView = view;
+            if (this.focusView) {
+                this.focusView.trigger(new EvtFocus(true));
             }
         }
     }
     public static findView(canvas: HTMLCanvasElement): SceneView {
-        for (let i = 0; i < Scene.views.length; i++) {
-            if (Scene.views[i].canvas.canvas === canvas) {
-                return Scene.views[i];
+        for (let i = 0; i < this.views.length; i++) {
+            if (this.views[i].canvas.canvas === canvas) {
+                return this.views[i];
             }
         }
         return null;
     }
     public static removeView(canvas: HTMLCanvasElement): void {
-        for (let i = 0; i < Scene.views.length; i++) {
-            if (Scene.views[i].canvas.canvas === canvas) {
-                Scene.views.splice(i, 1);
+        for (let i = 0; i < this.views.length; i++) {
+            if (this.views[i].canvas.canvas === canvas) {
+                this.views.splice(i, 1);
             }
         }
     }
     public static setCapture(view: SceneView) {
-        Scene.capturedView = view;
+        this.capturedView = view;
     }
     public static init() {
-        Scene.initEventListeners();
+        this.initEventListeners();
     }
     public static done() {
-        Scene.doneEventListeners();
+        this.doneEventListeners();
     }
     private static hitView(x: number, y: number): SceneView {
-        if (Scene.capturedView !== null) {
-            return Scene.capturedView;
+        if (this.capturedView !== null) {
+            return this.capturedView;
         }
-        for (let i = 0; i < Scene.views.length; i++) {
-            const view = Scene.views[i];
+        for (let i = 0; i < this.views.length; i++) {
+            const view = this.views[i];
             const rc = view.canvas.viewport_rect;
             if (x >= rc.x && x < rc.x + rc.w && y >= rc.y && y < rc.y + rc.h) {
                 return view;
@@ -1030,48 +1030,48 @@ export class Scene extends BaseObject {
     }
     private static resizeHandler() {
         let e = new EvtResize();
-        Scene.views.forEach((view: SceneView) => {
+        this.views.forEach((view: SceneView) => {
             view.triggerEx(e);
         });
     }
     private static mouseDownHandler(ev: MouseEvent) {
-        Scene.clickTick = Date.now();
-        let view = Scene.hitView(ev.clientX, ev.clientY);
+        this.clickTick = Date.now();
+        let view = this.hitView(ev.clientX, ev.clientY);
         if (view !== null) {
             view.handleMouseDown(ev);
         }
     }
     private static mouseUpHandler(ev: MouseEvent) {
-        let view = Scene.hitView(ev.clientX, ev.clientY);
+        let view = this.hitView(ev.clientX, ev.clientY);
         if (view !== null) {
             let tick = Date.now();
-            if (tick < Scene.clickTick + Scene.clickTime) {
-                if (tick < Scene.dblClickTick + Scene.dblclickTime) {
+            if (tick < this.clickTick + this.clickTime) {
+                if (tick < this.dblClickTick + this.dblclickTime) {
                     view.handleDblClick(ev);
-                    Scene.dblClickTick = 0;
+                    this.dblClickTick = 0;
                 } else {
                     view.handleClick(ev);
-                    Scene.dblClickTick = tick;
+                    this.dblClickTick = tick;
                 }
             } else {
-                Scene.dblClickTick = 0;
+                this.dblClickTick = 0;
             }
             view.handleMouseUp(ev);
-            Scene.clickTick = 0;
+            this.clickTick = 0;
         } else {
-            Scene.clickTick = 0;
-            Scene.dblClickTick = 0;
+            this.clickTick = 0;
+            this.dblClickTick = 0;
         }
     }
     private static mouseMoveHandler(ev: MouseEvent) {
-        let view = Scene.hitView(ev.clientX, ev.clientY);
-        if (view !== Scene.hoverView) {
-            if (Scene.hoverView) {
-                Scene.hoverView.triggerEx(new EvtMouseLeave());
-                Scene.hoverView = null;
+        let view = this.hitView(ev.clientX, ev.clientY);
+        if (view !== this.hoverView) {
+            if (this.hoverView) {
+                this.hoverView.triggerEx(new EvtMouseLeave());
+                this.hoverView = null;
             }
             if (view !== null) {
-                Scene.hoverView = view;
+                this.hoverView = view;
                 view.triggerEx(new EvtMouseEnter());
             }
         }
@@ -1082,37 +1082,37 @@ export class Scene extends BaseObject {
         }
     }
     private static keyDownHandler(ev: KeyboardEvent) {
-        if (Scene.focusView) {
-            Scene.focusView.trigger(new EvtKeyDown(ev.key, ev.keyCode, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+        if (this.focusView) {
+            this.focusView.trigger(new EvtKeyDown(ev.key, ev.keyCode, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
         }
     }
     private static keyUpHandler(ev: KeyboardEvent) {
-        if (Scene.focusView) {
-            Scene.focusView.trigger(new EvtKeyUp(ev.key, ev.keyCode, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+        if (this.focusView) {
+            this.focusView.trigger(new EvtKeyUp(ev.key, ev.keyCode, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
         }
     }
     private static keyPressHandler(ev: KeyboardEvent) {
-        if (Scene.focusView) {
-            Scene.focusView.trigger(new EvtKeyPress(ev.key, ev.keyCode, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+        if (this.focusView) {
+            this.focusView.trigger(new EvtKeyPress(ev.key, ev.keyCode, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
         }
     }
     private static initEventListeners(): void {
-        window.addEventListener('resize', Scene.resizeHandler);
-        window.addEventListener(window.onpointerdown ? 'pointerdown' : 'mousedown', Scene.mouseDownHandler);
-        window.addEventListener(window.onpointerup ? 'pointerup' : 'mouseup', Scene.mouseUpHandler);
-        window.addEventListener(window.onpointermove ? 'pointermove' : 'mousemove', Scene.mouseMoveHandler);
-        window.addEventListener('keydown', Scene.keyDownHandler);
-        window.addEventListener('keyup', Scene.keyUpHandler);
-        window.addEventListener('keypress', Scene.keyPressHandler);
+        window.addEventListener('resize', this.resizeHandler);
+        window.addEventListener(window.onpointerdown ? 'pointerdown' : 'mousedown', this.mouseDownHandler);
+        window.addEventListener(window.onpointerup ? 'pointerup' : 'mouseup', this.mouseUpHandler);
+        window.addEventListener(window.onpointermove ? 'pointermove' : 'mousemove', this.mouseMoveHandler);
+        window.addEventListener('keydown', this.keyDownHandler);
+        window.addEventListener('keyup', this.keyUpHandler);
+        window.addEventListener('keypress', this.keyPressHandler);
     }
     private static doneEventListeners(): void {
-        window.removeEventListener('resize', Scene.resizeHandler);
-        window.removeEventListener(window.onpointerdown ? 'pointerdown' : 'mousedown', Scene.mouseDownHandler);
-        window.removeEventListener(window.onpointerup ? 'pointerup' : 'mouseup', Scene.mouseUpHandler);
-        window.removeEventListener(window.onpointermove ? 'pointermove' : 'mousemove', Scene.mouseMoveHandler);
-        window.removeEventListener('keydown', Scene.keyDownHandler);
-        window.removeEventListener('keyup', Scene.keyUpHandler);
-        window.removeEventListener('keypress', Scene.keyPressHandler);
+        window.removeEventListener('resize', this.resizeHandler);
+        window.removeEventListener(window.onpointerdown ? 'pointerdown' : 'mousedown', this.mouseDownHandler);
+        window.removeEventListener(window.onpointerup ? 'pointerup' : 'mouseup', this.mouseUpHandler);
+        window.removeEventListener(window.onpointermove ? 'pointermove' : 'mousemove', this.mouseMoveHandler);
+        window.removeEventListener('keydown', this.keyDownHandler);
+        window.removeEventListener('keyup', this.keyUpHandler);
+        window.removeEventListener('keypress', this.keyPressHandler);
     }
 }
 
