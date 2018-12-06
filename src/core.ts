@@ -4,12 +4,6 @@ import { IntersectionTestShapePoint } from './intersect';
 
 export type CullResult = { [z: number]: { object: EventObserver; z: number; transform: Matrix2d }[] };
 export type EventHandler<T extends BaseEvent> = (evt: T) => void;
-export interface IRect {
-    x: number;
-    y: number;
-    w: number;
-    h: number;
-}
 
 export enum EventListenerOrder {
     FIRST = 1,
