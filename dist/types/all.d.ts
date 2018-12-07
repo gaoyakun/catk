@@ -10,5 +10,4 @@ export * from './keycode';
 export * from './transform';
 export * from './core';
 export * from './components';
-export * from './graph';
 export * from './paint';
