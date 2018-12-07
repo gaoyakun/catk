@@ -1,3 +1,150 @@
+var Matrix2d = /** @class */ (function () {
+    function Matrix2d() {
+        this.a = 1;
+        this.b = 0;
+        this.c = 0;
+        this.d = 1;
+        this.e = 0;
+        this.f = 0;
+    }
+    Matrix2d.getIdentity = function () {
+        return new Matrix2d();
+    };
+    Matrix2d.getTranslate = function (x, y) {
+        return new Matrix2d().makeTranslate(x, y);
+    };
+    Matrix2d.getScale = function (x, y) {
+        return new Matrix2d().makeScale(x, y);
+    };
+    Matrix2d.getRotate = function (theta) {
+        return new Matrix2d().makeRotate(theta);
+    };
+    Matrix2d.transform = function (t1, t2) {
+        return new Matrix2d().copyFrom(t1).transform(t2);
+    };
+    Matrix2d.translate = function (t, x, y) {
+        return new Matrix2d().copyFrom(t).translate(x, y);
+    };
+    Matrix2d.scale = function (t, x, y) {
+        return new Matrix2d().copyFrom(t).scale(x, y);
+    };
+    Matrix2d.rotate = function (t, theta) {
+        return new Matrix2d().copyFrom(t).rotate(theta);
+    };
+    Matrix2d.invert = function (t) {
+        return new Matrix2d().copyFrom(t).invert();
+    };
+    Matrix2d.prototype.set = function (a, b, c, d, e, f) {
+        this.a = a;
+        this.b = b;
+        this.c = c;
+        this.d = d;
+        this.e = e;
+        this.f = f;
+        return this;
+    };
+    Matrix2d.prototype.makeIdentity = function () {
+        return this.set(1, 0, 0, 1, 0, 0);
+    };
+    Matrix2d.prototype.makeTranslate = function (x, y) {
+        return this.set(1, 0, 0, 1, x, y);
+    };
+    Matrix2d.prototype.makeScale = function (x, y) {
+        return this.set(x, 0, 0, y, 0, 0);
+    };
+    Matrix2d.prototype.makeRotate = function (theta) {
+        var s = Math.sin(theta);
+        var c = Math.cos(theta);
+        return this.set(c, s, -s, c, 0.0, 0.0);
+    };
+    Matrix2d.prototype.copyFrom = function (otherTransform) {
+        return this.set(otherTransform.a, otherTransform.b, otherTransform.c, otherTransform.d, otherTransform.e, otherTransform.f);
+    };
+    Matrix2d.prototype.transform = function (right) {
+        return this.set(this.a * right.a + this.c * right.b, this.b * right.a + this.d * right.b, this.a * right.c + this.c * right.d, this.b * right.c + this.d * right.d, this.a * right.e + this.c * right.f + this.e, this.b * right.e + this.d * right.f + this.f);
+    };
+    Matrix2d.prototype.transformPoint = function (point) {
+        return {
+            x: Math.round(this.a * point.x + this.c * point.y + this.e),
+            y: Math.round(this.b * point.x + this.d * point.y + this.f)
+        };
+    };
+    Matrix2d.prototype.translate = function (x, y) {
+        return this.transform(Matrix2d.getTranslate(x, y));
+    };
+    Matrix2d.prototype.scale = function (x, y) {
+        return this.transform(Matrix2d.getScale(x, y));
+    };
+    Matrix2d.prototype.rotate = function (theta) {
+        return this.transform(Matrix2d.getRotate(theta));
+    };
+    Matrix2d.prototype.invert = function () {
+        var a00 = this.a;
+        var a01 = this.b;
+        var a02 = 0;
+        var a10 = this.c;
+        var a11 = this.d;
+        var a12 = 0;
+        var a20 = this.e;
+        var a21 = this.f;
+        var a22 = 1;
+        var b01 = a22 * a11 - a12 * a21;
+        var b11 = -a22 * a10 + a12 * a20;
+        var b21 = a21 * a10 - a11 * a20;
+        var det = a00 * b01 + a01 * b11 + a02 * b21;
+        if (!det) {
+            return this;
+        }
+        det = 1.0 / det;
+        this.a = b01 * det;
+        this.b = (-a22 * a01 + a02 * a21) * det;
+        this.c = b11 * det;
+        this.d = (a22 * a00 - a02 * a20) * det;
+        this.e = b21 * det;
+        this.f = (-a21 * a00 + a01 * a20) * det;
+        return this;
+    };
+    Matrix2d.prototype.getTranslationPart = function () {
+        return { x: this.e, y: this.f };
+    };
+    Matrix2d.prototype.setTranslationPart = function (t) {
+        this.e = t.x;
+        this.f = t.y;
+    };
+    Matrix2d.prototype.getScalePart = function () {
+        return {
+            x: Math.sqrt(this.a * this.a + this.b * this.b),
+            y: Math.sqrt(this.c * this.c + this.d * this.d)
+        };
+    };
+    Matrix2d.prototype.setScalePart = function (s) {
+        var sc = this.getScalePart();
+        var s1 = s.x / sc.x;
+        this.a *= s1;
+        this.b *= s1;
+        var s2 = s.y / sc.y;
+        this.c *= s2;
+        this.d *= s2;
+    };
+    Matrix2d.prototype.getRotationPart = function () {
+        var sc = Math.sqrt(this.a * this.a + this.b * this.b);
+        var ac = Math.max(Math.min(this.a / sc, 1), -1);
+        var as = Math.max(Math.min(this.b / sc, 1), -1);
+        var angle = Math.acos(ac);
+        return as >= 0 ? angle : 2 * Math.PI - angle;
+    };
+    Matrix2d.prototype.setRotationPart = function (r) {
+        var sc = this.getScalePart();
+        var sin = Math.sin(r);
+        var cos = Math.cos(r);
+        this.a = sc.x * cos;
+        this.b = sc.x * sin;
+        this.c = -sc.y * sin;
+        this.d = sc.y * cos;
+    };
+    return Matrix2d;
+}());
+
 function GetTopLeft(rect) {
     return { x: rect.x, y: rect.y };
 }
@@ -194,7 +341,7 @@ var BoundingHull = /** @class */ (function (_super) {
     return BoundingHull;
 }(BoundingShape));
 
-var __extends = (undefined && undefined.__extends) || (function () {
+var __extends$2 = (undefined && undefined.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
         ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
         function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
@@ -205,7 +352,7 @@ var __extends = (undefined && undefined.__extends) || (function () {
     };
 })();
 var BoundingBox = /** @class */ (function (_super) {
-    __extends(BoundingBox, _super);
+    __extends$2(BoundingBox, _super);
     function BoundingBox(rect) {
         var _this = _super.call(this, BoundingBox.type) || this;
         _this.rect = rect || null;
@@ -238,7 +385,7 @@ var BoundingBox = /** @class */ (function (_super) {
     return BoundingBox;
 }(BoundingShape));
 
-var __extends$2 = (undefined && undefined.__extends) || (function () {
+var __extends$3 = (undefined && undefined.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
         ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
         function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
@@ -249,7 +396,7 @@ var __extends$2 = (undefined && undefined.__extends) || (function () {
     };
 })();
 var BoundingSegment = /** @class */ (function (_super) {
-    __extends$2(BoundingSegment, _super);
+    __extends$3(BoundingSegment, _super);
     function BoundingSegment(seg) {
         if (seg === void 0) { seg = null; }
         var _this = _super.call(this, BoundingSegment.type) || this;
@@ -343,7 +490,7 @@ var BoundingSegment = /** @class */ (function (_super) {
     return BoundingSegment;
 }(BoundingShape));
 
-var __extends$3 = (undefined && undefined.__extends) || (function () {
+var __extends$4 = (undefined && undefined.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
         ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
         function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
@@ -354,7 +501,7 @@ var __extends$3 = (undefined && undefined.__extends) || (function () {
     };
 })();
 var BoundingSphere = /** @class */ (function (_super) {
-    __extends$3(BoundingSphere, _super);
+    __extends$4(BoundingSphere, _super);
     function BoundingSphere(sphere) {
         if (sphere === void 0) { sphere = null; }
         var _this = _super.call(this, BoundingSphere.type) || this;
@@ -893,552 +1040,7 @@ function IntersectionTestSegmentSegment(s1, s2) {
     return { x: x, y: y };
 }
 
-var __extends$4 = (undefined && undefined.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-var SplineType;
-(function (SplineType) {
-    SplineType[SplineType["STEP"] = 1] = "STEP";
-    SplineType[SplineType["LINEAR"] = 2] = "LINEAR";
-    SplineType[SplineType["POLY"] = 3] = "POLY";
-})(SplineType || (SplineType = {}));
-var CurveEvaluter = /** @class */ (function () {
-    function CurveEvaluter(cp, clamp) {
-        if (clamp === void 0) { clamp = false; }
-        this.cp = cp;
-        this.clamp = clamp;
-    }
-    CurveEvaluter.prototype.eval = function (x) {
-        return 0;
-    };
-    CurveEvaluter.prototype.evalFirst = function () {
-        return this.cp.length > 0 ? this.cp[0].y : 0;
-    };
-    CurveEvaluter.prototype.evalLast = function () {
-        return this.cp.length > 0 ? this.cp[this.cp.length - 1].y : 0;
-    };
-    return CurveEvaluter;
-}());
-var StepEvaluter = /** @class */ (function (_super) {
-    __extends$4(StepEvaluter, _super);
-    function StepEvaluter(cp, clamp) {
-        if (clamp === void 0) { clamp = false; }
-        var _this = _super.call(this, cp, clamp) || this;
-        _this.h = new Array(cp.length - 1);
-        _this.compute();
-        return _this;
-    }
-    StepEvaluter.prototype.compute = function () {
-        for (var i = 0; i < this.cp.length - 1; ++i) {
-            this.h[i] = this.cp[i + 1].x - this.cp[i].x;
-        }
-    };
-    StepEvaluter.prototype.getSegment = function (x) {
-        var i;
-        for (i = 0; i < this.cp.length - 1; i++) {
-            if (x < this.cp[i + 1].x) {
-                break;
-            }
-        }
-        return i;
-    };
-    StepEvaluter.prototype.eval = function (x) {
-        if (this.clamp) {
-            if (x < 0) {
-                return this.cp[0].y;
-            }
-            if (x > this.cp[this.cp.length - 1].x) {
-                return this.cp[this.cp.length - 1].y;
-            }
-        }
-        var seg = this.getSegment(x);
-        return this.cp[seg].y;
-    };
-    return StepEvaluter;
-}(CurveEvaluter));
-var CoLinearEvaluter = /** @class */ (function (_super) {
-    __extends$4(CoLinearEvaluter, _super);
-    function CoLinearEvaluter(cp, clamp) {
-        if (clamp === void 0) { clamp = false; }
-        var _this = _super.call(this, cp, clamp) || this;
-        _this.h = new Array(cp.length - 1);
-        _this.cp = cp;
-        _this.compute();
-        return _this;
-    }
-    CoLinearEvaluter.prototype.compute = function () {
-        for (var i = 0; i < this.cp.length - 1; ++i) {
-            this.h[i] = this.cp[i + 1].x - this.cp[i].x;
-        }
-    };
-    CoLinearEvaluter.prototype.getSegment = function (x) {
-        var i;
-        for (i = 0; i < this.cp.length - 1; i++) {
-            if (x < this.cp[i + 1].x) {
-                break;
-            }
-        }
-        if (i === this.cp.length - 1) {
-            i--;
-        }
-        return i;
-    };
-    CoLinearEvaluter.prototype.eval = function (x) {
-        if (this.clamp) {
-            if (x < 0) {
-                return this.cp[0].y;
-            }
-            if (x > this.cp[this.cp.length - 1].x) {
-                return this.cp[this.cp.length - 1].y;
-            }
-        }
-        var seg = this.getSegment(x);
-        var t = x - this.cp[seg].x;
-        return this.cp[seg].y + ((this.cp[seg + 1].y - this.cp[seg].y) * t) / this.h[seg];
-    };
-    return CoLinearEvaluter;
-}(CurveEvaluter));
-var PolynomialsEvaluter = /** @class */ (function (_super) {
-    __extends$4(PolynomialsEvaluter, _super);
-    function PolynomialsEvaluter(cp, clamp) {
-        if (clamp === void 0) { clamp = false; }
-        var _this = _super.call(this, cp, clamp) || this;
-        _this.a = new Array(cp.length);
-        _this.h = new Array(cp.length);
-        _this.cp = cp;
-        _this.compute();
-        return _this;
-    }
-    PolynomialsEvaluter.prototype.solveTridiag = function (sub, diag, sup) {
-        var n = this.cp.length - 2;
-        for (var i = 2; i <= n; i++) {
-            sub[i] /= diag[i - 1];
-            diag[i] -= sub[i] * sup[i - 1];
-            this.a[i] -= this.a[i - 1] * sub[i];
-        }
-        this.a[n] /= diag[n];
-        for (var i = n - 1; i >= 1; --i) {
-            this.a[i] = (this.a[i] - this.a[i + 1] * sup[i]) / diag[i];
-        }
-    };
-    PolynomialsEvaluter.prototype.compute = function () {
-        var nk = this.cp.length;
-        var sub = new Array(nk - 1);
-        var diag = new Array(nk - 1);
-        var sup = new Array(nk - 1);
-        this.a[0] = 0;
-        this.a[nk - 1] = 0;
-        for (var i = 1; i < nk; ++i) {
-            this.h[i] = this.cp[i].x - this.cp[i - 1].x;
-        }
-        for (var i = 1; i < nk - 1; ++i) {
-            diag[i] = (this.h[i] + this.h[i + 1]) / 3;
-            sup[i] = this.h[i + 1] / 6;
-            sub[i] = this.h[i] / 6;
-            this.a[i] = (this.cp[i + 1].y - this.cp[i].y) / this.h[i + 1] - (this.cp[i].y - this.cp[i - 1].y) / this.h[i];
-        }
-        this.solveTridiag(sub, diag, sup);
-    };
-    PolynomialsEvaluter.prototype.getSegment = function (x) {
-        var i;
-        for (i = 0; i < this.cp.length - 1; i++) {
-            if (x < this.cp[i + 1].x) {
-                break;
-            }
-        }
-        if (i === this.cp.length - 1) {
-            i--;
-        }
-        return i;
-    };
-    PolynomialsEvaluter.prototype.eval = function (x) {
-        if (this.clamp) {
-            if (x < 0) {
-                return this.cp[0].y;
-            }
-            if (x > this.cp[this.cp.length - 1].x) {
-                return this.cp[this.cp.length - 1].y;
-            }
-        }
-        var seg = this.getSegment(x) + 1;
-        var t1 = x - this.cp[seg - 1].x;
-        var t2 = this.h[seg] - t1;
-        return ((((-this.a[seg - 1] / 6.0) * (t2 + this.h[seg]) * t1 + this.cp[seg - 1].y) * t2 + ((-this.a[seg] / 6.0) * (t1 + this.h[seg]) * t2 + this.cp[seg].y) * t1) / this.h[seg]);
-    };
-    return PolynomialsEvaluter;
-}(CurveEvaluter));
-var Spline = /** @class */ (function () {
-    function Spline(type, cp, clamp) {
-        if (clamp === void 0) { clamp = false; }
-        this._evalutors = [];
-        this._array = false;
-        if (cp.length > 0) {
-            if (typeof cp[0].y === 'number') {
-                this.initNonArray(type, cp, clamp);
-            }
-            else {
-                this.initArray(type, cp, clamp);
-            }
-        }
-    }
-    Spline.prototype.eval = function (x) {
-        if (this._evalutors.length > 0) {
-            if (this._array) {
-                var result_1 = [];
-                this._evalutors.forEach(function (evalutor) {
-                    result_1.push(evalutor.eval(x));
-                });
-                return result_1;
-            }
-            else {
-                return this._evalutors[0].eval(x);
-            }
-        }
-        else {
-            return 0;
-        }
-    };
-    Spline.prototype.evalFirst = function () {
-        if (this._evalutors.length > 0) {
-            if (this._array) {
-                var result_2 = [];
-                this._evalutors.forEach(function (evalutor) {
-                    result_2.push(evalutor.evalFirst());
-                });
-                return result_2;
-            }
-            else {
-                return this._evalutors[0].evalFirst();
-            }
-        }
-        else {
-            return 0;
-        }
-    };
-    Spline.prototype.evalLast = function () {
-        if (this._evalutors.length > 0) {
-            if (this._array) {
-                var result_3 = [];
-                this._evalutors.forEach(function (evalutor) {
-                    result_3.push(evalutor.evalLast());
-                });
-                return result_3;
-            }
-            else {
-                return this._evalutors[0].evalLast();
-            }
-        }
-        else {
-            return 0;
-        }
-    };
-    Spline.prototype.initArray = function (type, cp, clamp) {
-        var numElements = cp[0].y.length;
-        if (numElements > 0) {
-            for (var i = 0; i < numElements; i++) {
-                var t = [];
-                for (var j = 0; j < cp.length; j++) {
-                    var val = cp[j].y.length > i ? cp[j].y[i] : 0;
-                    t.push({ x: cp[j].x, y: val });
-                }
-                switch (type) {
-                    case SplineType.STEP:
-                        this._evalutors.push(new StepEvaluter(t, clamp));
-                        break;
-                    case SplineType.LINEAR:
-                        this._evalutors.push(new CoLinearEvaluter(t, clamp));
-                        break;
-                    case SplineType.POLY:
-                    default:
-                        this._evalutors.push(new PolynomialsEvaluter(t, clamp));
-                        break;
-                }
-            }
-            this._array = true;
-        }
-    };
-    Spline.prototype.initNonArray = function (type, cp, clamp) {
-        switch (type) {
-            case SplineType.STEP:
-                this._evalutors.push(new StepEvaluter(cp, clamp));
-                break;
-            case SplineType.LINEAR:
-                this._evalutors.push(new CoLinearEvaluter(cp, clamp));
-                break;
-            case SplineType.POLY:
-            default:
-                this._evalutors.push(new PolynomialsEvaluter(cp, clamp));
-                break;
-        }
-        this._array = false;
-    };
-    return Spline;
-}());
-
-var KeyCode;
-(function (KeyCode) {
-    KeyCode[KeyCode["kBackspace"] = 8] = "kBackspace";
-    KeyCode[KeyCode["kTab"] = 9] = "kTab";
-    KeyCode[KeyCode["kClear"] = 12] = "kClear";
-    KeyCode[KeyCode["kEnter"] = 13] = "kEnter";
-    KeyCode[KeyCode["kShift"] = 16] = "kShift";
-    KeyCode[KeyCode["kControl"] = 17] = "kControl";
-    KeyCode[KeyCode["kAlt"] = 18] = "kAlt";
-    KeyCode[KeyCode["kPause"] = 19] = "kPause";
-    KeyCode[KeyCode["kCapsLock"] = 20] = "kCapsLock";
-    KeyCode[KeyCode["kEscape"] = 27] = "kEscape";
-    KeyCode[KeyCode["kSpace"] = 32] = "kSpace";
-    KeyCode[KeyCode["kPageUp"] = 33] = "kPageUp";
-    KeyCode[KeyCode["kPageDown"] = 34] = "kPageDown";
-    KeyCode[KeyCode["kEnd"] = 35] = "kEnd";
-    KeyCode[KeyCode["kHome"] = 36] = "kHome";
-    KeyCode[KeyCode["kLeft"] = 37] = "kLeft";
-    KeyCode[KeyCode["kUp"] = 38] = "kUp";
-    KeyCode[KeyCode["kRight"] = 39] = "kRight";
-    KeyCode[KeyCode["kDown"] = 40] = "kDown";
-    KeyCode[KeyCode["kSelect"] = 41] = "kSelect";
-    KeyCode[KeyCode["kPrint"] = 42] = "kPrint";
-    KeyCode[KeyCode["kExecute"] = 43] = "kExecute";
-    KeyCode[KeyCode["kInsert"] = 45] = "kInsert";
-    KeyCode[KeyCode["kDelete"] = 46] = "kDelete";
-    KeyCode[KeyCode["kHelp"] = 47] = "kHelp";
-    KeyCode[KeyCode["k0"] = 48] = "k0";
-    KeyCode[KeyCode["k1"] = 49] = "k1";
-    KeyCode[KeyCode["k2"] = 50] = "k2";
-    KeyCode[KeyCode["k3"] = 51] = "k3";
-    KeyCode[KeyCode["k4"] = 52] = "k4";
-    KeyCode[KeyCode["k5"] = 53] = "k5";
-    KeyCode[KeyCode["k6"] = 54] = "k6";
-    KeyCode[KeyCode["k7"] = 55] = "k7";
-    KeyCode[KeyCode["k8"] = 56] = "k8";
-    KeyCode[KeyCode["k9"] = 57] = "k9";
-    KeyCode[KeyCode["kA"] = 65] = "kA";
-    KeyCode[KeyCode["kB"] = 66] = "kB";
-    KeyCode[KeyCode["kC"] = 67] = "kC";
-    KeyCode[KeyCode["kD"] = 68] = "kD";
-    KeyCode[KeyCode["kE"] = 69] = "kE";
-    KeyCode[KeyCode["kF"] = 70] = "kF";
-    KeyCode[KeyCode["kG"] = 71] = "kG";
-    KeyCode[KeyCode["kH"] = 72] = "kH";
-    KeyCode[KeyCode["kI"] = 73] = "kI";
-    KeyCode[KeyCode["kJ"] = 74] = "kJ";
-    KeyCode[KeyCode["kK"] = 75] = "kK";
-    KeyCode[KeyCode["kL"] = 76] = "kL";
-    KeyCode[KeyCode["kM"] = 77] = "kM";
-    KeyCode[KeyCode["kN"] = 78] = "kN";
-    KeyCode[KeyCode["kO"] = 79] = "kO";
-    KeyCode[KeyCode["kP"] = 80] = "kP";
-    KeyCode[KeyCode["kQ"] = 81] = "kQ";
-    KeyCode[KeyCode["kR"] = 82] = "kR";
-    KeyCode[KeyCode["kS"] = 83] = "kS";
-    KeyCode[KeyCode["kT"] = 84] = "kT";
-    KeyCode[KeyCode["kU"] = 85] = "kU";
-    KeyCode[KeyCode["kV"] = 86] = "kV";
-    KeyCode[KeyCode["kW"] = 87] = "kW";
-    KeyCode[KeyCode["kX"] = 88] = "kX";
-    KeyCode[KeyCode["kY"] = 89] = "kY";
-    KeyCode[KeyCode["kZ"] = 90] = "kZ";
-    KeyCode[KeyCode["kLeftMeta"] = 91] = "kLeftMeta";
-    KeyCode[KeyCode["kRightMeta"] = 92] = "kRightMeta";
-    KeyCode[KeyCode["kMenu"] = 93] = "kMenu";
-    KeyCode[KeyCode["kKP0"] = 96] = "kKP0";
-    KeyCode[KeyCode["kKP1"] = 97] = "kKP1";
-    KeyCode[KeyCode["kKP2"] = 98] = "kKP2";
-    KeyCode[KeyCode["kKP3"] = 99] = "kKP3";
-    KeyCode[KeyCode["kKP4"] = 100] = "kKP4";
-    KeyCode[KeyCode["kKP5"] = 101] = "kKP5";
-    KeyCode[KeyCode["kKP6"] = 102] = "kKP6";
-    KeyCode[KeyCode["kKP7"] = 103] = "kKP7";
-    KeyCode[KeyCode["kKP8"] = 104] = "kKP8";
-    KeyCode[KeyCode["kKP9"] = 105] = "kKP9";
-    KeyCode[KeyCode["kKPMul"] = 106] = "kKPMul";
-    KeyCode[KeyCode["kKPAdd"] = 107] = "kKPAdd";
-    KeyCode[KeyCode["kKPSep"] = 108] = "kKPSep";
-    KeyCode[KeyCode["kKPSub"] = 109] = "kKPSub";
-    KeyCode[KeyCode["kKPDec"] = 110] = "kKPDec";
-    KeyCode[KeyCode["kKPDiv"] = 111] = "kKPDiv";
-    KeyCode[KeyCode["kF1"] = 112] = "kF1";
-    KeyCode[KeyCode["kF2"] = 113] = "kF2";
-    KeyCode[KeyCode["kF3"] = 114] = "kF3";
-    KeyCode[KeyCode["kF4"] = 115] = "kF4";
-    KeyCode[KeyCode["kF5"] = 116] = "kF5";
-    KeyCode[KeyCode["kF6"] = 117] = "kF6";
-    KeyCode[KeyCode["kF7"] = 118] = "kF7";
-    KeyCode[KeyCode["kF8"] = 119] = "kF8";
-    KeyCode[KeyCode["kF9"] = 120] = "kF9";
-    KeyCode[KeyCode["kF10"] = 121] = "kF10";
-    KeyCode[KeyCode["kF11"] = 122] = "kF11";
-    KeyCode[KeyCode["kF12"] = 123] = "kF12";
-    KeyCode[KeyCode["kNumLock"] = 144] = "kNumLock";
-    KeyCode[KeyCode["kScrollLock"] = 145] = "kScrollLock";
-    KeyCode[KeyCode["kAdd"] = 187] = "kAdd";
-    KeyCode[KeyCode["kComma"] = 188] = "kComma";
-    KeyCode[KeyCode["kMinus"] = 189] = "kMinus";
-    KeyCode[KeyCode["kPeriod"] = 190] = "kPeriod";
-    KeyCode[KeyCode["kApostrophe"] = 192] = "kApostrophe";
-    KeyCode[KeyCode["kLeftBrace"] = 219] = "kLeftBrace";
-    KeyCode[KeyCode["kRightBrace"] = 221] = "kRightBrace";
-    KeyCode[KeyCode["kBackSlash"] = 220] = "kBackSlash";
-    KeyCode[KeyCode["kQuot"] = 222] = "kQuot";
-    KeyCode[KeyCode["kSemicolon"] = 186] = "kSemicolon";
-    KeyCode[KeyCode["kSlash"] = 191] = "kSlash";
-})(KeyCode || (KeyCode = {}));
-
-var Matrix2d = /** @class */ (function () {
-    function Matrix2d() {
-        this.a = 1;
-        this.b = 0;
-        this.c = 0;
-        this.d = 1;
-        this.e = 0;
-        this.f = 0;
-    }
-    Matrix2d.getIdentity = function () {
-        return new Matrix2d();
-    };
-    Matrix2d.getTranslate = function (x, y) {
-        return new Matrix2d().makeTranslate(x, y);
-    };
-    Matrix2d.getScale = function (x, y) {
-        return new Matrix2d().makeScale(x, y);
-    };
-    Matrix2d.getRotate = function (theta) {
-        return new Matrix2d().makeRotate(theta);
-    };
-    Matrix2d.transform = function (t1, t2) {
-        return new Matrix2d().copyFrom(t1).transform(t2);
-    };
-    Matrix2d.translate = function (t, x, y) {
-        return new Matrix2d().copyFrom(t).translate(x, y);
-    };
-    Matrix2d.scale = function (t, x, y) {
-        return new Matrix2d().copyFrom(t).scale(x, y);
-    };
-    Matrix2d.rotate = function (t, theta) {
-        return new Matrix2d().copyFrom(t).rotate(theta);
-    };
-    Matrix2d.invert = function (t) {
-        return new Matrix2d().copyFrom(t).invert();
-    };
-    Matrix2d.prototype.set = function (a, b, c, d, e, f) {
-        this.a = a;
-        this.b = b;
-        this.c = c;
-        this.d = d;
-        this.e = e;
-        this.f = f;
-        return this;
-    };
-    Matrix2d.prototype.makeIdentity = function () {
-        return this.set(1, 0, 0, 1, 0, 0);
-    };
-    Matrix2d.prototype.makeTranslate = function (x, y) {
-        return this.set(1, 0, 0, 1, x, y);
-    };
-    Matrix2d.prototype.makeScale = function (x, y) {
-        return this.set(x, 0, 0, y, 0, 0);
-    };
-    Matrix2d.prototype.makeRotate = function (theta) {
-        var s = Math.sin(theta);
-        var c = Math.cos(theta);
-        return this.set(c, s, -s, c, 0.0, 0.0);
-    };
-    Matrix2d.prototype.copyFrom = function (otherTransform) {
-        return this.set(otherTransform.a, otherTransform.b, otherTransform.c, otherTransform.d, otherTransform.e, otherTransform.f);
-    };
-    Matrix2d.prototype.transform = function (right) {
-        return this.set(this.a * right.a + this.c * right.b, this.b * right.a + this.d * right.b, this.a * right.c + this.c * right.d, this.b * right.c + this.d * right.d, this.a * right.e + this.c * right.f + this.e, this.b * right.e + this.d * right.f + this.f);
-    };
-    Matrix2d.prototype.transformPoint = function (point) {
-        return {
-            x: Math.round(this.a * point.x + this.c * point.y + this.e),
-            y: Math.round(this.b * point.x + this.d * point.y + this.f)
-        };
-    };
-    Matrix2d.prototype.translate = function (x, y) {
-        return this.transform(Matrix2d.getTranslate(x, y));
-    };
-    Matrix2d.prototype.scale = function (x, y) {
-        return this.transform(Matrix2d.getScale(x, y));
-    };
-    Matrix2d.prototype.rotate = function (theta) {
-        return this.transform(Matrix2d.getRotate(theta));
-    };
-    Matrix2d.prototype.invert = function () {
-        var a00 = this.a;
-        var a01 = this.b;
-        var a02 = 0;
-        var a10 = this.c;
-        var a11 = this.d;
-        var a12 = 0;
-        var a20 = this.e;
-        var a21 = this.f;
-        var a22 = 1;
-        var b01 = a22 * a11 - a12 * a21;
-        var b11 = -a22 * a10 + a12 * a20;
-        var b21 = a21 * a10 - a11 * a20;
-        var det = a00 * b01 + a01 * b11 + a02 * b21;
-        if (!det) {
-            return this;
-        }
-        det = 1.0 / det;
-        this.a = b01 * det;
-        this.b = (-a22 * a01 + a02 * a21) * det;
-        this.c = b11 * det;
-        this.d = (a22 * a00 - a02 * a20) * det;
-        this.e = b21 * det;
-        this.f = (-a21 * a00 + a01 * a20) * det;
-        return this;
-    };
-    Matrix2d.prototype.getTranslationPart = function () {
-        return { x: this.e, y: this.f };
-    };
-    Matrix2d.prototype.setTranslationPart = function (t) {
-        this.e = t.x;
-        this.f = t.y;
-    };
-    Matrix2d.prototype.getScalePart = function () {
-        return {
-            x: Math.sqrt(this.a * this.a + this.b * this.b),
-            y: Math.sqrt(this.c * this.c + this.d * this.d)
-        };
-    };
-    Matrix2d.prototype.setScalePart = function (s) {
-        var sc = this.getScalePart();
-        var s1 = s.x / sc.x;
-        this.a *= s1;
-        this.b *= s1;
-        var s2 = s.y / sc.y;
-        this.c *= s2;
-        this.d *= s2;
-    };
-    Matrix2d.prototype.getRotationPart = function () {
-        var sc = Math.sqrt(this.a * this.a + this.b * this.b);
-        var ac = Math.max(Math.min(this.a / sc, 1), -1);
-        var as = Math.max(Math.min(this.b / sc, 1), -1);
-        var angle = Math.acos(ac);
-        return as >= 0 ? angle : 2 * Math.PI - angle;
-    };
-    Matrix2d.prototype.setRotationPart = function (r) {
-        var sc = this.getScalePart();
-        var sin = Math.sin(r);
-        var cos = Math.cos(r);
-        this.a = sc.x * cos;
-        this.b = sc.x * sin;
-        this.c = -sc.y * sin;
-        this.d = sc.y * cos;
-    };
-    return Matrix2d;
-}());
-
-var __extends$5 = (undefined && undefined.__extends) || (function () {
+var __extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
         ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
         function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
@@ -1464,7 +1066,7 @@ var BaseEvent = /** @class */ (function () {
     return BaseEvent;
 }());
 var EvtComponentBeforeAttach = /** @class */ (function (_super) {
-    __extends$5(EvtComponentBeforeAttach, _super);
+    __extends(EvtComponentBeforeAttach, _super);
     function EvtComponentBeforeAttach(object) {
         var _this = _super.call(this, EvtComponentBeforeAttach.type) || this;
         _this.object = object;
@@ -1475,7 +1077,7 @@ var EvtComponentBeforeAttach = /** @class */ (function (_super) {
     return EvtComponentBeforeAttach;
 }(BaseEvent));
 var EvtComponentAttached = /** @class */ (function (_super) {
-    __extends$5(EvtComponentAttached, _super);
+    __extends(EvtComponentAttached, _super);
     function EvtComponentAttached() {
         return _super.call(this, EvtComponentAttached.type) || this;
     }
@@ -1483,7 +1085,7 @@ var EvtComponentAttached = /** @class */ (function (_super) {
     return EvtComponentAttached;
 }(BaseEvent));
 var EvtComponentBeforeDetach = /** @class */ (function (_super) {
-    __extends$5(EvtComponentBeforeDetach, _super);
+    __extends(EvtComponentBeforeDetach, _super);
     function EvtComponentBeforeDetach() {
         var _this = _super.call(this, EvtComponentBeforeDetach.type) || this;
         _this.allow = true;
@@ -1493,7 +1095,7 @@ var EvtComponentBeforeDetach = /** @class */ (function (_super) {
     return EvtComponentBeforeDetach;
 }(BaseEvent));
 var EvtComponentDetached = /** @class */ (function (_super) {
-    __extends$5(EvtComponentDetached, _super);
+    __extends(EvtComponentDetached, _super);
     function EvtComponentDetached() {
         return _super.call(this, EvtComponentDetached.type) || this;
     }
@@ -1501,7 +1103,7 @@ var EvtComponentDetached = /** @class */ (function (_super) {
     return EvtComponentDetached;
 }(BaseEvent));
 var EvtUpdate = /** @class */ (function (_super) {
-    __extends$5(EvtUpdate, _super);
+    __extends(EvtUpdate, _super);
     function EvtUpdate(deltaTime, elapsedTime, frameStamp) {
         var _this = _super.call(this, EvtUpdate.type) || this;
         _this.deltaTime = deltaTime;
@@ -1513,7 +1115,7 @@ var EvtUpdate = /** @class */ (function (_super) {
     return EvtUpdate;
 }(BaseEvent));
 var EvtCull = /** @class */ (function (_super) {
-    __extends$5(EvtCull, _super);
+    __extends(EvtCull, _super);
     function EvtCull(w, h) {
         var _this = _super.call(this, EvtCull.type) || this;
         _this.canvasWidth = w;
@@ -1530,7 +1132,7 @@ var EvtCull = /** @class */ (function (_super) {
     return EvtCull;
 }(BaseEvent));
 var EvtDraw = /** @class */ (function (_super) {
-    __extends$5(EvtDraw, _super);
+    __extends(EvtDraw, _super);
     function EvtDraw(canvas, z, transform) {
         var _this = _super.call(this, EvtDraw.type) || this;
         _this.canvas = canvas;
@@ -1542,7 +1144,7 @@ var EvtDraw = /** @class */ (function (_super) {
     return EvtDraw;
 }(BaseEvent));
 var EvtHitTest = /** @class */ (function (_super) {
-    __extends$5(EvtHitTest, _super);
+    __extends(EvtHitTest, _super);
     function EvtHitTest(x, y) {
         var _this = _super.call(this, EvtHitTest.type) || this;
         _this.x = x;
@@ -1554,7 +1156,7 @@ var EvtHitTest = /** @class */ (function (_super) {
     return EvtHitTest;
 }(BaseEvent));
 var EvtGetBoundingShape = /** @class */ (function (_super) {
-    __extends$5(EvtGetBoundingShape, _super);
+    __extends(EvtGetBoundingShape, _super);
     function EvtGetBoundingShape() {
         return _super.call(this, EvtGetBoundingShape.type) || this;
     }
@@ -1562,7 +1164,7 @@ var EvtGetBoundingShape = /** @class */ (function (_super) {
     return EvtGetBoundingShape;
 }(BaseEvent));
 var EvtFrame = /** @class */ (function (_super) {
-    __extends$5(EvtFrame, _super);
+    __extends(EvtFrame, _super);
     function EvtFrame(deltaTime, elapsedTime, frameStamp) {
         var _this = _super.call(this, EvtFrame.type) || this;
         _this.deltaTime = deltaTime;
@@ -1574,7 +1176,7 @@ var EvtFrame = /** @class */ (function (_super) {
     return EvtFrame;
 }(BaseEvent));
 var EvtFocus = /** @class */ (function (_super) {
-    __extends$5(EvtFocus, _super);
+    __extends(EvtFocus, _super);
     function EvtFocus(focus) {
         var _this = _super.call(this, EvtFocus.type) || this;
         _this.focus = focus;
@@ -1584,7 +1186,7 @@ var EvtFocus = /** @class */ (function (_super) {
     return EvtFocus;
 }(BaseEvent));
 var EvtKeyboard = /** @class */ (function (_super) {
-    __extends$5(EvtKeyboard, _super);
+    __extends(EvtKeyboard, _super);
     function EvtKeyboard(type, key, code, shift, alt, ctrl, meta) {
         var _this = _super.call(this, type) || this;
         _this.key = key;
@@ -1598,7 +1200,7 @@ var EvtKeyboard = /** @class */ (function (_super) {
     return EvtKeyboard;
 }(BaseEvent));
 var EvtKeyDown = /** @class */ (function (_super) {
-    __extends$5(EvtKeyDown, _super);
+    __extends(EvtKeyDown, _super);
     function EvtKeyDown(key, code, shift, alt, ctrl, meta) {
         return _super.call(this, EvtKeyDown.type, key, code, shift, alt, ctrl, meta) || this;
     }
@@ -1606,7 +1208,7 @@ var EvtKeyDown = /** @class */ (function (_super) {
     return EvtKeyDown;
 }(EvtKeyboard));
 var EvtKeyUp = /** @class */ (function (_super) {
-    __extends$5(EvtKeyUp, _super);
+    __extends(EvtKeyUp, _super);
     function EvtKeyUp(key, code, shift, alt, ctrl, meta) {
         return _super.call(this, EvtKeyUp.type, key, code, shift, alt, ctrl, meta) || this;
     }
@@ -1614,7 +1216,7 @@ var EvtKeyUp = /** @class */ (function (_super) {
     return EvtKeyUp;
 }(EvtKeyboard));
 var EvtKeyPress = /** @class */ (function (_super) {
-    __extends$5(EvtKeyPress, _super);
+    __extends(EvtKeyPress, _super);
     function EvtKeyPress(key, code, shift, alt, ctrl, meta) {
         return _super.call(this, EvtKeyPress.type, key, code, shift, alt, ctrl, meta) || this;
     }
@@ -1622,7 +1224,7 @@ var EvtKeyPress = /** @class */ (function (_super) {
     return EvtKeyPress;
 }(EvtKeyboard));
 var EvtMouse = /** @class */ (function (_super) {
-    __extends$5(EvtMouse, _super);
+    __extends(EvtMouse, _super);
     function EvtMouse(type, x, y, button, shiftDown, altDown, ctrlDown, metaDown) {
         var _this = _super.call(this, type) || this;
         _this.x = x;
@@ -1641,7 +1243,7 @@ var EvtMouse = /** @class */ (function (_super) {
     return EvtMouse;
 }(BaseEvent));
 var EvtMouseDown = /** @class */ (function (_super) {
-    __extends$5(EvtMouseDown, _super);
+    __extends(EvtMouseDown, _super);
     function EvtMouseDown(x, y, button, shiftDown, altDown, ctrlDown, metaDown) {
         return _super.call(this, EvtMouseDown.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown) || this;
     }
@@ -1649,7 +1251,7 @@ var EvtMouseDown = /** @class */ (function (_super) {
     return EvtMouseDown;
 }(EvtMouse));
 var EvtMouseUp = /** @class */ (function (_super) {
-    __extends$5(EvtMouseUp, _super);
+    __extends(EvtMouseUp, _super);
     function EvtMouseUp(x, y, button, shiftDown, altDown, ctrlDown, metaDown) {
         return _super.call(this, EvtMouseUp.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown) || this;
     }
@@ -1657,7 +1259,7 @@ var EvtMouseUp = /** @class */ (function (_super) {
     return EvtMouseUp;
 }(EvtMouse));
 var EvtMouseMove = /** @class */ (function (_super) {
-    __extends$5(EvtMouseMove, _super);
+    __extends(EvtMouseMove, _super);
     function EvtMouseMove(x, y, button, shiftDown, altDown, ctrlDown, metaDown) {
         return _super.call(this, EvtMouseMove.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown) || this;
     }
@@ -1665,7 +1267,7 @@ var EvtMouseMove = /** @class */ (function (_super) {
     return EvtMouseMove;
 }(EvtMouse));
 var EvtMouseEnter = /** @class */ (function (_super) {
-    __extends$5(EvtMouseEnter, _super);
+    __extends(EvtMouseEnter, _super);
     function EvtMouseEnter() {
         return _super.call(this, EvtMouseEnter.type) || this;
     }
@@ -1673,7 +1275,7 @@ var EvtMouseEnter = /** @class */ (function (_super) {
     return EvtMouseEnter;
 }(BaseEvent));
 var EvtMouseLeave = /** @class */ (function (_super) {
-    __extends$5(EvtMouseLeave, _super);
+    __extends(EvtMouseLeave, _super);
     function EvtMouseLeave() {
         return _super.call(this, EvtMouseLeave.type) || this;
     }
@@ -1681,7 +1283,7 @@ var EvtMouseLeave = /** @class */ (function (_super) {
     return EvtMouseLeave;
 }(BaseEvent));
 var EvtClick = /** @class */ (function (_super) {
-    __extends$5(EvtClick, _super);
+    __extends(EvtClick, _super);
     function EvtClick(x, y, button, shiftDown, altDown, ctrlDown, metaDown) {
         return _super.call(this, EvtClick.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown) || this;
     }
@@ -1689,7 +1291,7 @@ var EvtClick = /** @class */ (function (_super) {
     return EvtClick;
 }(EvtMouse));
 var EvtDblClick = /** @class */ (function (_super) {
-    __extends$5(EvtDblClick, _super);
+    __extends(EvtDblClick, _super);
     function EvtDblClick(x, y, button, shiftDown, altDown, ctrlDown, metaDown) {
         return _super.call(this, EvtDblClick.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown) || this;
     }
@@ -1697,7 +1299,7 @@ var EvtDblClick = /** @class */ (function (_super) {
     return EvtDblClick;
 }(EvtMouse));
 var EvtDragBegin = /** @class */ (function (_super) {
-    __extends$5(EvtDragBegin, _super);
+    __extends(EvtDragBegin, _super);
     function EvtDragBegin(x, y, button, shiftDown, altDown, ctrlDown, metaDown) {
         var _this = _super.call(this, EvtDragBegin.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown) || this;
         _this.data = null;
@@ -1707,7 +1309,7 @@ var EvtDragBegin = /** @class */ (function (_super) {
     return EvtDragBegin;
 }(EvtMouse));
 var EvtDragEnd = /** @class */ (function (_super) {
-    __extends$5(EvtDragEnd, _super);
+    __extends(EvtDragEnd, _super);
     function EvtDragEnd(x, y, button, shiftDown, altDown, ctrlDown, metaDown, data) {
         var _this = _super.call(this, EvtDragEnd.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown) || this;
         _this.data = data;
@@ -1717,7 +1319,7 @@ var EvtDragEnd = /** @class */ (function (_super) {
     return EvtDragEnd;
 }(EvtMouse));
 var EvtDragging = /** @class */ (function (_super) {
-    __extends$5(EvtDragging, _super);
+    __extends(EvtDragging, _super);
     function EvtDragging(x, y, button, shiftDown, altDown, ctrlDown, metaDown, data) {
         var _this = _super.call(this, EvtDragging.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown) || this;
         _this.data = data;
@@ -1727,7 +1329,7 @@ var EvtDragging = /** @class */ (function (_super) {
     return EvtDragging;
 }(EvtMouse));
 var EvtDragOver = /** @class */ (function (_super) {
-    __extends$5(EvtDragOver, _super);
+    __extends(EvtDragOver, _super);
     function EvtDragOver(x, y, button, shiftDown, altDown, ctrlDown, metaDown, object, data) {
         var _this = _super.call(this, EvtDragOver.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown) || this;
         _this.object = object;
@@ -1738,7 +1340,7 @@ var EvtDragOver = /** @class */ (function (_super) {
     return EvtDragOver;
 }(EvtMouse));
 var EvtDragDrop = /** @class */ (function (_super) {
-    __extends$5(EvtDragDrop, _super);
+    __extends(EvtDragDrop, _super);
     function EvtDragDrop(x, y, button, shiftDown, altDown, ctrlDown, metaDown, object, data) {
         var _this = _super.call(this, EvtDragDrop.type, x, y, button, shiftDown, altDown, ctrlDown, metaDown) || this;
         _this.object = object;
@@ -1749,7 +1351,7 @@ var EvtDragDrop = /** @class */ (function (_super) {
     return EvtDragDrop;
 }(EvtMouse));
 var EvtResize = /** @class */ (function (_super) {
-    __extends$5(EvtResize, _super);
+    __extends(EvtResize, _super);
     function EvtResize() {
         return _super.call(this, EvtResize.type) || this;
     }
@@ -1757,7 +1359,7 @@ var EvtResize = /** @class */ (function (_super) {
     return EvtResize;
 }(BaseEvent));
 var EvtCanvasResize = /** @class */ (function (_super) {
-    __extends$5(EvtCanvasResize, _super);
+    __extends(EvtCanvasResize, _super);
     function EvtCanvasResize(view) {
         var _this = _super.call(this, EvtCanvasResize.type) || this;
         _this.view = view;
@@ -1767,7 +1369,7 @@ var EvtCanvasResize = /** @class */ (function (_super) {
     return EvtCanvasResize;
 }(BaseEvent));
 var EvtGetProp = /** @class */ (function (_super) {
-    __extends$5(EvtGetProp, _super);
+    __extends(EvtGetProp, _super);
     function EvtGetProp(propName) {
         var _this = _super.call(this, EvtGetProp.type) || this;
         _this.propName = propName;
@@ -1778,7 +1380,7 @@ var EvtGetProp = /** @class */ (function (_super) {
     return EvtGetProp;
 }(BaseEvent));
 var EvtSetProp = /** @class */ (function (_super) {
-    __extends$5(EvtSetProp, _super);
+    __extends(EvtSetProp, _super);
     function EvtSetProp(propName, propValue) {
         var _this = _super.call(this, EvtSetProp.type) || this;
         _this.propName = propName;
@@ -1789,7 +1391,7 @@ var EvtSetProp = /** @class */ (function (_super) {
     return EvtSetProp;
 }(BaseEvent));
 var EvtSceneViewPageWillChange = /** @class */ (function (_super) {
-    __extends$5(EvtSceneViewPageWillChange, _super);
+    __extends(EvtSceneViewPageWillChange, _super);
     function EvtSceneViewPageWillChange(view, oldPage, newPage) {
         var _this = _super.call(this, EvtSceneViewPageWillChange.type) || this;
         _this.view = view;
@@ -1801,7 +1403,7 @@ var EvtSceneViewPageWillChange = /** @class */ (function (_super) {
     return EvtSceneViewPageWillChange;
 }(BaseEvent));
 var EvtSceneViewPageChanged = /** @class */ (function (_super) {
-    __extends$5(EvtSceneViewPageChanged, _super);
+    __extends(EvtSceneViewPageChanged, _super);
     function EvtSceneViewPageChanged(view, oldPage, newPage) {
         var _this = _super.call(this, EvtSceneViewPageChanged.type) || this;
         _this.view = view;
@@ -1958,11 +1560,67 @@ var App = /** @class */ (function () {
             this.elapsedTime = 0;
             this.deltaTime = 0;
             this.frameStamp = 0;
+            this.init();
             requestAnimationFrame(frame);
         }
     };
     App.stop = function () {
-        this.running = false;
+        if (this.running) {
+            this.running = false;
+            this.done();
+        }
+    };
+    App.addView = function (view) {
+        if (view && view.canvas && !this.findView(view.canvas.canvas)) {
+            this.views.push(view);
+            if (!this.focusView) {
+                this.setFocusView(view);
+            }
+            return true;
+        }
+        return false;
+    };
+    App.addCanvas = function (canvas, doubleBuffer) {
+        if (!this.findView(canvas)) {
+            var view = new SceneView(canvas, doubleBuffer === undefined ? false : doubleBuffer);
+            return this.addView(view) ? view : null;
+        }
+        return null;
+    };
+    App.setFocusView = function (view) {
+        if (this.focusView !== view) {
+            if (this.focusView) {
+                this.focusView.trigger(new EvtFocus(false));
+            }
+            this.focusView = view;
+            if (this.focusView) {
+                this.focusView.trigger(new EvtFocus(true));
+            }
+        }
+    };
+    App.findView = function (canvas) {
+        for (var i = 0; i < this.views.length; i++) {
+            if (this.views[i].canvas.canvas === canvas) {
+                return this.views[i];
+            }
+        }
+        return null;
+    };
+    App.removeView = function (canvas) {
+        for (var i = 0; i < this.views.length; i++) {
+            if (this.views[i].canvas.canvas === canvas) {
+                this.views.splice(i, 1);
+            }
+        }
+    };
+    App.setCapture = function (view) {
+        this.capturedView = view;
+    };
+    App.init = function () {
+        this.initEventListeners();
+    };
+    App.done = function () {
+        this.doneEventListeners();
     };
     App.processEvent = function (evt, target) {
         var handlerList = this.eventListeners[evt.type];
@@ -1985,6 +1643,108 @@ var App = /** @class */ (function () {
             }
         }
     };
+    App.hitView = function (x, y) {
+        if (this.capturedView !== null) {
+            return this.capturedView;
+        }
+        for (var i = 0; i < this.views.length; i++) {
+            var view = this.views[i];
+            var rc = view.canvas.viewport_rect;
+            if (x >= rc.x && x < rc.x + rc.w && y >= rc.y && y < rc.y + rc.h) {
+                return view;
+            }
+        }
+        return null;
+    };
+    App.resizeHandler = function () {
+        var e = new EvtResize();
+        this.views.forEach(function (view) {
+            view.triggerEx(e);
+        });
+    };
+    App.mouseDownHandler = function (ev) {
+        this.clickTick = Date.now();
+        var view = this.hitView(ev.clientX, ev.clientY);
+        if (view !== null) {
+            view.handleMouseDown(ev);
+        }
+    };
+    App.mouseUpHandler = function (ev) {
+        var view = this.hitView(ev.clientX, ev.clientY);
+        if (view !== null) {
+            var tick = Date.now();
+            if (tick < this.clickTick + this.clickTime) {
+                if (tick < this.dblClickTick + this.dblclickTime) {
+                    view.handleDblClick(ev);
+                    this.dblClickTick = 0;
+                }
+                else {
+                    view.handleClick(ev);
+                    this.dblClickTick = tick;
+                }
+            }
+            else {
+                this.dblClickTick = 0;
+            }
+            view.handleMouseUp(ev);
+            this.clickTick = 0;
+        }
+        else {
+            this.clickTick = 0;
+            this.dblClickTick = 0;
+        }
+    };
+    App.mouseMoveHandler = function (ev) {
+        var view = this.hitView(ev.clientX, ev.clientY);
+        if (view !== this.hoverView) {
+            if (this.hoverView) {
+                this.hoverView.triggerEx(new EvtMouseLeave());
+                this.hoverView = null;
+            }
+            if (view !== null) {
+                this.hoverView = view;
+                view.triggerEx(new EvtMouseEnter());
+            }
+        }
+        if (view !== null) {
+            var rc = view.canvas.viewport_rect;
+            view.updateHitObjects(ev.clientX - rc.x, ev.clientY - rc.y);
+            view.handleMouseMove(ev);
+        }
+    };
+    App.keyDownHandler = function (ev) {
+        if (this.focusView) {
+            this.focusView.trigger(new EvtKeyDown(ev.key, ev.keyCode, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+        }
+    };
+    App.keyUpHandler = function (ev) {
+        if (this.focusView) {
+            this.focusView.trigger(new EvtKeyUp(ev.key, ev.keyCode, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+        }
+    };
+    App.keyPressHandler = function (ev) {
+        if (this.focusView) {
+            this.focusView.trigger(new EvtKeyPress(ev.key, ev.keyCode, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+        }
+    };
+    App.initEventListeners = function () {
+        window.addEventListener('resize', this.resizeHandler);
+        window.addEventListener(window.onpointerdown ? 'pointerdown' : 'mousedown', this.mouseDownHandler);
+        window.addEventListener(window.onpointerup ? 'pointerup' : 'mouseup', this.mouseUpHandler);
+        window.addEventListener(window.onpointermove ? 'pointermove' : 'mousemove', this.mouseMoveHandler);
+        window.addEventListener('keydown', this.keyDownHandler);
+        window.addEventListener('keyup', this.keyUpHandler);
+        window.addEventListener('keypress', this.keyPressHandler);
+    };
+    App.doneEventListeners = function () {
+        window.removeEventListener('resize', this.resizeHandler);
+        window.removeEventListener(window.onpointerdown ? 'pointerdown' : 'mousedown', this.mouseDownHandler);
+        window.removeEventListener(window.onpointerup ? 'pointerup' : 'mouseup', this.mouseUpHandler);
+        window.removeEventListener(window.onpointermove ? 'pointermove' : 'mousemove', this.mouseMoveHandler);
+        window.removeEventListener('keydown', this.keyDownHandler);
+        window.removeEventListener('keyup', this.keyUpHandler);
+        window.removeEventListener('keypress', this.keyPressHandler);
+    };
     App.elapsedTime = 0;
     App.deltaTime = 0;
     App.eventQueue = [];
@@ -1993,10 +1753,18 @@ var App = /** @class */ (function () {
     App.lastFrameTime = 0;
     App.firstFrameTime = 0;
     App.frameStamp = 0;
+    App.capturedView = null;
+    App.hoverView = null;
+    App.focusView = null;
+    App.views = [];
+    App.clickTick = 0;
+    App.dblClickTick = 0;
+    App.clickTime = 400;
+    App.dblclickTime = 400;
     return App;
 }());
 var Component = /** @class */ (function (_super) {
-    __extends$5(Component, _super);
+    __extends(Component, _super);
     function Component(type) {
         var _this = _super.call(this) || this;
         _this.type = type;
@@ -2009,7 +1777,7 @@ var Component = /** @class */ (function (_super) {
     return Component;
 }(EventObserver));
 var BaseObject = /** @class */ (function (_super) {
-    __extends$5(BaseObject, _super);
+    __extends(BaseObject, _super);
     function BaseObject() {
         var _this = _super.call(this) || this;
         _this.components = {};
@@ -2096,7 +1864,7 @@ var BaseObject = /** @class */ (function (_super) {
     return BaseObject;
 }(EventObserver));
 var SceneObject = /** @class */ (function (_super) {
-    __extends$5(SceneObject, _super);
+    __extends(SceneObject, _super);
     function SceneObject(parent) {
         if (parent === void 0) { parent = null; }
         var _this = _super.call(this) || this;
@@ -2453,177 +2221,8 @@ var SceneObject = /** @class */ (function (_super) {
     };
     return SceneObject;
 }(BaseObject));
-var Scene = /** @class */ (function (_super) {
-    __extends$5(Scene, _super);
-    function Scene() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    Scene.addView = function (view) {
-        if (view && view.canvas && !this.findView(view.canvas.canvas)) {
-            this.views.push(view);
-            if (!this.focusView) {
-                this.setFocusView(view);
-            }
-            return true;
-        }
-        return false;
-    };
-    Scene.addCanvas = function (canvas, doubleBuffer) {
-        if (!this.findView(canvas)) {
-            var view = new SceneView(canvas, doubleBuffer === undefined ? false : doubleBuffer);
-            return this.addView(view) ? view : null;
-        }
-        return null;
-    };
-    Scene.setFocusView = function (view) {
-        if (this.focusView !== view) {
-            if (this.focusView) {
-                this.focusView.trigger(new EvtFocus(false));
-            }
-            this.focusView = view;
-            if (this.focusView) {
-                this.focusView.trigger(new EvtFocus(true));
-            }
-        }
-    };
-    Scene.findView = function (canvas) {
-        for (var i = 0; i < this.views.length; i++) {
-            if (this.views[i].canvas.canvas === canvas) {
-                return this.views[i];
-            }
-        }
-        return null;
-    };
-    Scene.removeView = function (canvas) {
-        for (var i = 0; i < this.views.length; i++) {
-            if (this.views[i].canvas.canvas === canvas) {
-                this.views.splice(i, 1);
-            }
-        }
-    };
-    Scene.setCapture = function (view) {
-        this.capturedView = view;
-    };
-    Scene.init = function () {
-        this.initEventListeners();
-    };
-    Scene.done = function () {
-        this.doneEventListeners();
-    };
-    Scene.hitView = function (x, y) {
-        if (this.capturedView !== null) {
-            return this.capturedView;
-        }
-        for (var i = 0; i < this.views.length; i++) {
-            var view = this.views[i];
-            var rc = view.canvas.viewport_rect;
-            if (x >= rc.x && x < rc.x + rc.w && y >= rc.y && y < rc.y + rc.h) {
-                return view;
-            }
-        }
-        return null;
-    };
-    Scene.resizeHandler = function () {
-        var e = new EvtResize();
-        this.views.forEach(function (view) {
-            view.triggerEx(e);
-        });
-    };
-    Scene.mouseDownHandler = function (ev) {
-        this.clickTick = Date.now();
-        var view = this.hitView(ev.clientX, ev.clientY);
-        if (view !== null) {
-            view.handleMouseDown(ev);
-        }
-    };
-    Scene.mouseUpHandler = function (ev) {
-        var view = this.hitView(ev.clientX, ev.clientY);
-        if (view !== null) {
-            var tick = Date.now();
-            if (tick < this.clickTick + this.clickTime) {
-                if (tick < this.dblClickTick + this.dblclickTime) {
-                    view.handleDblClick(ev);
-                    this.dblClickTick = 0;
-                }
-                else {
-                    view.handleClick(ev);
-                    this.dblClickTick = tick;
-                }
-            }
-            else {
-                this.dblClickTick = 0;
-            }
-            view.handleMouseUp(ev);
-            this.clickTick = 0;
-        }
-        else {
-            this.clickTick = 0;
-            this.dblClickTick = 0;
-        }
-    };
-    Scene.mouseMoveHandler = function (ev) {
-        var view = this.hitView(ev.clientX, ev.clientY);
-        if (view !== this.hoverView) {
-            if (this.hoverView) {
-                this.hoverView.triggerEx(new EvtMouseLeave());
-                this.hoverView = null;
-            }
-            if (view !== null) {
-                this.hoverView = view;
-                view.triggerEx(new EvtMouseEnter());
-            }
-        }
-        if (view !== null) {
-            var rc = view.canvas.viewport_rect;
-            view.updateHitObjects(ev.clientX - rc.x, ev.clientY - rc.y);
-            view.handleMouseMove(ev);
-        }
-    };
-    Scene.keyDownHandler = function (ev) {
-        if (this.focusView) {
-            this.focusView.trigger(new EvtKeyDown(ev.key, ev.keyCode, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
-        }
-    };
-    Scene.keyUpHandler = function (ev) {
-        if (this.focusView) {
-            this.focusView.trigger(new EvtKeyUp(ev.key, ev.keyCode, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
-        }
-    };
-    Scene.keyPressHandler = function (ev) {
-        if (this.focusView) {
-            this.focusView.trigger(new EvtKeyPress(ev.key, ev.keyCode, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
-        }
-    };
-    Scene.initEventListeners = function () {
-        window.addEventListener('resize', this.resizeHandler);
-        window.addEventListener(window.onpointerdown ? 'pointerdown' : 'mousedown', this.mouseDownHandler);
-        window.addEventListener(window.onpointerup ? 'pointerup' : 'mouseup', this.mouseUpHandler);
-        window.addEventListener(window.onpointermove ? 'pointermove' : 'mousemove', this.mouseMoveHandler);
-        window.addEventListener('keydown', this.keyDownHandler);
-        window.addEventListener('keyup', this.keyUpHandler);
-        window.addEventListener('keypress', this.keyPressHandler);
-    };
-    Scene.doneEventListeners = function () {
-        window.removeEventListener('resize', this.resizeHandler);
-        window.removeEventListener(window.onpointerdown ? 'pointerdown' : 'mousedown', this.mouseDownHandler);
-        window.removeEventListener(window.onpointerup ? 'pointerup' : 'mouseup', this.mouseUpHandler);
-        window.removeEventListener(window.onpointermove ? 'pointermove' : 'mousemove', this.mouseMoveHandler);
-        window.removeEventListener('keydown', this.keyDownHandler);
-        window.removeEventListener('keyup', this.keyUpHandler);
-        window.removeEventListener('keypress', this.keyPressHandler);
-    };
-    Scene.capturedView = null;
-    Scene.hoverView = null;
-    Scene.focusView = null;
-    Scene.views = [];
-    Scene.clickTick = 0;
-    Scene.dblClickTick = 0;
-    Scene.clickTime = 400;
-    Scene.dblclickTime = 400;
-    return Scene;
-}(BaseObject));
 var SceneView = /** @class */ (function (_super) {
-    __extends$5(SceneView, _super);
+    __extends(SceneView, _super);
     function SceneView(canvas, doubleBuffer) {
         if (doubleBuffer === void 0) { doubleBuffer = false; }
         var _this = _super.call(this) || this;
@@ -2981,7 +2580,7 @@ var SceneView = /** @class */ (function (_super) {
         }
     };
     SceneView.prototype.setFocus = function () {
-        Scene.setFocusView(this);
+        App.setFocusView(this);
     };
     SceneView.prototype.hitTest = function (x, y) {
         function hitTest_r(object, result) {
@@ -3092,7 +2691,7 @@ function ResizeSensor(element, callback) {
     shrink.addEventListener('scroll', onScroll);
 }
 var Canvas = /** @class */ (function (_super) {
-    __extends$5(Canvas, _super);
+    __extends(Canvas, _super);
     function Canvas(view, canvas, doubleBuffer) {
         if (doubleBuffer === void 0) { doubleBuffer = false; }
         var _this = _super.call(this) || this;
@@ -3182,6 +2781,404 @@ var Canvas = /** @class */ (function (_super) {
     };
     return Canvas;
 }(BaseObject));
+
+var __extends$5 = (undefined && undefined.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+var SplineType;
+(function (SplineType) {
+    SplineType[SplineType["STEP"] = 1] = "STEP";
+    SplineType[SplineType["LINEAR"] = 2] = "LINEAR";
+    SplineType[SplineType["POLY"] = 3] = "POLY";
+})(SplineType || (SplineType = {}));
+var CurveEvaluter = /** @class */ (function () {
+    function CurveEvaluter(cp, clamp) {
+        if (clamp === void 0) { clamp = false; }
+        this.cp = cp;
+        this.clamp = clamp;
+    }
+    CurveEvaluter.prototype.eval = function (x) {
+        return 0;
+    };
+    CurveEvaluter.prototype.evalFirst = function () {
+        return this.cp.length > 0 ? this.cp[0].y : 0;
+    };
+    CurveEvaluter.prototype.evalLast = function () {
+        return this.cp.length > 0 ? this.cp[this.cp.length - 1].y : 0;
+    };
+    return CurveEvaluter;
+}());
+var StepEvaluter = /** @class */ (function (_super) {
+    __extends$5(StepEvaluter, _super);
+    function StepEvaluter(cp, clamp) {
+        if (clamp === void 0) { clamp = false; }
+        var _this = _super.call(this, cp, clamp) || this;
+        _this.h = new Array(cp.length - 1);
+        _this.compute();
+        return _this;
+    }
+    StepEvaluter.prototype.compute = function () {
+        for (var i = 0; i < this.cp.length - 1; ++i) {
+            this.h[i] = this.cp[i + 1].x - this.cp[i].x;
+        }
+    };
+    StepEvaluter.prototype.getSegment = function (x) {
+        var i;
+        for (i = 0; i < this.cp.length - 1; i++) {
+            if (x < this.cp[i + 1].x) {
+                break;
+            }
+        }
+        return i;
+    };
+    StepEvaluter.prototype.eval = function (x) {
+        if (this.clamp) {
+            if (x < 0) {
+                return this.cp[0].y;
+            }
+            if (x > this.cp[this.cp.length - 1].x) {
+                return this.cp[this.cp.length - 1].y;
+            }
+        }
+        var seg = this.getSegment(x);
+        return this.cp[seg].y;
+    };
+    return StepEvaluter;
+}(CurveEvaluter));
+var CoLinearEvaluter = /** @class */ (function (_super) {
+    __extends$5(CoLinearEvaluter, _super);
+    function CoLinearEvaluter(cp, clamp) {
+        if (clamp === void 0) { clamp = false; }
+        var _this = _super.call(this, cp, clamp) || this;
+        _this.h = new Array(cp.length - 1);
+        _this.cp = cp;
+        _this.compute();
+        return _this;
+    }
+    CoLinearEvaluter.prototype.compute = function () {
+        for (var i = 0; i < this.cp.length - 1; ++i) {
+            this.h[i] = this.cp[i + 1].x - this.cp[i].x;
+        }
+    };
+    CoLinearEvaluter.prototype.getSegment = function (x) {
+        var i;
+        for (i = 0; i < this.cp.length - 1; i++) {
+            if (x < this.cp[i + 1].x) {
+                break;
+            }
+        }
+        if (i === this.cp.length - 1) {
+            i--;
+        }
+        return i;
+    };
+    CoLinearEvaluter.prototype.eval = function (x) {
+        if (this.clamp) {
+            if (x < 0) {
+                return this.cp[0].y;
+            }
+            if (x > this.cp[this.cp.length - 1].x) {
+                return this.cp[this.cp.length - 1].y;
+            }
+        }
+        var seg = this.getSegment(x);
+        var t = x - this.cp[seg].x;
+        return this.cp[seg].y + ((this.cp[seg + 1].y - this.cp[seg].y) * t) / this.h[seg];
+    };
+    return CoLinearEvaluter;
+}(CurveEvaluter));
+var PolynomialsEvaluter = /** @class */ (function (_super) {
+    __extends$5(PolynomialsEvaluter, _super);
+    function PolynomialsEvaluter(cp, clamp) {
+        if (clamp === void 0) { clamp = false; }
+        var _this = _super.call(this, cp, clamp) || this;
+        _this.a = new Array(cp.length);
+        _this.h = new Array(cp.length);
+        _this.cp = cp;
+        _this.compute();
+        return _this;
+    }
+    PolynomialsEvaluter.prototype.solveTridiag = function (sub, diag, sup) {
+        var n = this.cp.length - 2;
+        for (var i = 2; i <= n; i++) {
+            sub[i] /= diag[i - 1];
+            diag[i] -= sub[i] * sup[i - 1];
+            this.a[i] -= this.a[i - 1] * sub[i];
+        }
+        this.a[n] /= diag[n];
+        for (var i = n - 1; i >= 1; --i) {
+            this.a[i] = (this.a[i] - this.a[i + 1] * sup[i]) / diag[i];
+        }
+    };
+    PolynomialsEvaluter.prototype.compute = function () {
+        var nk = this.cp.length;
+        var sub = new Array(nk - 1);
+        var diag = new Array(nk - 1);
+        var sup = new Array(nk - 1);
+        this.a[0] = 0;
+        this.a[nk - 1] = 0;
+        for (var i = 1; i < nk; ++i) {
+            this.h[i] = this.cp[i].x - this.cp[i - 1].x;
+        }
+        for (var i = 1; i < nk - 1; ++i) {
+            diag[i] = (this.h[i] + this.h[i + 1]) / 3;
+            sup[i] = this.h[i + 1] / 6;
+            sub[i] = this.h[i] / 6;
+            this.a[i] = (this.cp[i + 1].y - this.cp[i].y) / this.h[i + 1] - (this.cp[i].y - this.cp[i - 1].y) / this.h[i];
+        }
+        this.solveTridiag(sub, diag, sup);
+    };
+    PolynomialsEvaluter.prototype.getSegment = function (x) {
+        var i;
+        for (i = 0; i < this.cp.length - 1; i++) {
+            if (x < this.cp[i + 1].x) {
+                break;
+            }
+        }
+        if (i === this.cp.length - 1) {
+            i--;
+        }
+        return i;
+    };
+    PolynomialsEvaluter.prototype.eval = function (x) {
+        if (this.clamp) {
+            if (x < 0) {
+                return this.cp[0].y;
+            }
+            if (x > this.cp[this.cp.length - 1].x) {
+                return this.cp[this.cp.length - 1].y;
+            }
+        }
+        var seg = this.getSegment(x) + 1;
+        var t1 = x - this.cp[seg - 1].x;
+        var t2 = this.h[seg] - t1;
+        return ((((-this.a[seg - 1] / 6.0) * (t2 + this.h[seg]) * t1 + this.cp[seg - 1].y) * t2 + ((-this.a[seg] / 6.0) * (t1 + this.h[seg]) * t2 + this.cp[seg].y) * t1) / this.h[seg]);
+    };
+    return PolynomialsEvaluter;
+}(CurveEvaluter));
+var Spline = /** @class */ (function () {
+    function Spline(type, cp, clamp) {
+        if (clamp === void 0) { clamp = false; }
+        this._evalutors = [];
+        this._array = false;
+        if (cp.length > 0) {
+            if (typeof cp[0].y === 'number') {
+                this.initNonArray(type, cp, clamp);
+            }
+            else {
+                this.initArray(type, cp, clamp);
+            }
+        }
+    }
+    Spline.prototype.eval = function (x) {
+        if (this._evalutors.length > 0) {
+            if (this._array) {
+                var result_1 = [];
+                this._evalutors.forEach(function (evalutor) {
+                    result_1.push(evalutor.eval(x));
+                });
+                return result_1;
+            }
+            else {
+                return this._evalutors[0].eval(x);
+            }
+        }
+        else {
+            return 0;
+        }
+    };
+    Spline.prototype.evalFirst = function () {
+        if (this._evalutors.length > 0) {
+            if (this._array) {
+                var result_2 = [];
+                this._evalutors.forEach(function (evalutor) {
+                    result_2.push(evalutor.evalFirst());
+                });
+                return result_2;
+            }
+            else {
+                return this._evalutors[0].evalFirst();
+            }
+        }
+        else {
+            return 0;
+        }
+    };
+    Spline.prototype.evalLast = function () {
+        if (this._evalutors.length > 0) {
+            if (this._array) {
+                var result_3 = [];
+                this._evalutors.forEach(function (evalutor) {
+                    result_3.push(evalutor.evalLast());
+                });
+                return result_3;
+            }
+            else {
+                return this._evalutors[0].evalLast();
+            }
+        }
+        else {
+            return 0;
+        }
+    };
+    Spline.prototype.initArray = function (type, cp, clamp) {
+        var numElements = cp[0].y.length;
+        if (numElements > 0) {
+            for (var i = 0; i < numElements; i++) {
+                var t = [];
+                for (var j = 0; j < cp.length; j++) {
+                    var val = cp[j].y.length > i ? cp[j].y[i] : 0;
+                    t.push({ x: cp[j].x, y: val });
+                }
+                switch (type) {
+                    case SplineType.STEP:
+                        this._evalutors.push(new StepEvaluter(t, clamp));
+                        break;
+                    case SplineType.LINEAR:
+                        this._evalutors.push(new CoLinearEvaluter(t, clamp));
+                        break;
+                    case SplineType.POLY:
+                    default:
+                        this._evalutors.push(new PolynomialsEvaluter(t, clamp));
+                        break;
+                }
+            }
+            this._array = true;
+        }
+    };
+    Spline.prototype.initNonArray = function (type, cp, clamp) {
+        switch (type) {
+            case SplineType.STEP:
+                this._evalutors.push(new StepEvaluter(cp, clamp));
+                break;
+            case SplineType.LINEAR:
+                this._evalutors.push(new CoLinearEvaluter(cp, clamp));
+                break;
+            case SplineType.POLY:
+            default:
+                this._evalutors.push(new PolynomialsEvaluter(cp, clamp));
+                break;
+        }
+        this._array = false;
+    };
+    return Spline;
+}());
+
+var KeyCode;
+(function (KeyCode) {
+    KeyCode[KeyCode["kBackspace"] = 8] = "kBackspace";
+    KeyCode[KeyCode["kTab"] = 9] = "kTab";
+    KeyCode[KeyCode["kClear"] = 12] = "kClear";
+    KeyCode[KeyCode["kEnter"] = 13] = "kEnter";
+    KeyCode[KeyCode["kShift"] = 16] = "kShift";
+    KeyCode[KeyCode["kControl"] = 17] = "kControl";
+    KeyCode[KeyCode["kAlt"] = 18] = "kAlt";
+    KeyCode[KeyCode["kPause"] = 19] = "kPause";
+    KeyCode[KeyCode["kCapsLock"] = 20] = "kCapsLock";
+    KeyCode[KeyCode["kEscape"] = 27] = "kEscape";
+    KeyCode[KeyCode["kSpace"] = 32] = "kSpace";
+    KeyCode[KeyCode["kPageUp"] = 33] = "kPageUp";
+    KeyCode[KeyCode["kPageDown"] = 34] = "kPageDown";
+    KeyCode[KeyCode["kEnd"] = 35] = "kEnd";
+    KeyCode[KeyCode["kHome"] = 36] = "kHome";
+    KeyCode[KeyCode["kLeft"] = 37] = "kLeft";
+    KeyCode[KeyCode["kUp"] = 38] = "kUp";
+    KeyCode[KeyCode["kRight"] = 39] = "kRight";
+    KeyCode[KeyCode["kDown"] = 40] = "kDown";
+    KeyCode[KeyCode["kSelect"] = 41] = "kSelect";
+    KeyCode[KeyCode["kPrint"] = 42] = "kPrint";
+    KeyCode[KeyCode["kExecute"] = 43] = "kExecute";
+    KeyCode[KeyCode["kInsert"] = 45] = "kInsert";
+    KeyCode[KeyCode["kDelete"] = 46] = "kDelete";
+    KeyCode[KeyCode["kHelp"] = 47] = "kHelp";
+    KeyCode[KeyCode["k0"] = 48] = "k0";
+    KeyCode[KeyCode["k1"] = 49] = "k1";
+    KeyCode[KeyCode["k2"] = 50] = "k2";
+    KeyCode[KeyCode["k3"] = 51] = "k3";
+    KeyCode[KeyCode["k4"] = 52] = "k4";
+    KeyCode[KeyCode["k5"] = 53] = "k5";
+    KeyCode[KeyCode["k6"] = 54] = "k6";
+    KeyCode[KeyCode["k7"] = 55] = "k7";
+    KeyCode[KeyCode["k8"] = 56] = "k8";
+    KeyCode[KeyCode["k9"] = 57] = "k9";
+    KeyCode[KeyCode["kA"] = 65] = "kA";
+    KeyCode[KeyCode["kB"] = 66] = "kB";
+    KeyCode[KeyCode["kC"] = 67] = "kC";
+    KeyCode[KeyCode["kD"] = 68] = "kD";
+    KeyCode[KeyCode["kE"] = 69] = "kE";
+    KeyCode[KeyCode["kF"] = 70] = "kF";
+    KeyCode[KeyCode["kG"] = 71] = "kG";
+    KeyCode[KeyCode["kH"] = 72] = "kH";
+    KeyCode[KeyCode["kI"] = 73] = "kI";
+    KeyCode[KeyCode["kJ"] = 74] = "kJ";
+    KeyCode[KeyCode["kK"] = 75] = "kK";
+    KeyCode[KeyCode["kL"] = 76] = "kL";
+    KeyCode[KeyCode["kM"] = 77] = "kM";
+    KeyCode[KeyCode["kN"] = 78] = "kN";
+    KeyCode[KeyCode["kO"] = 79] = "kO";
+    KeyCode[KeyCode["kP"] = 80] = "kP";
+    KeyCode[KeyCode["kQ"] = 81] = "kQ";
+    KeyCode[KeyCode["kR"] = 82] = "kR";
+    KeyCode[KeyCode["kS"] = 83] = "kS";
+    KeyCode[KeyCode["kT"] = 84] = "kT";
+    KeyCode[KeyCode["kU"] = 85] = "kU";
+    KeyCode[KeyCode["kV"] = 86] = "kV";
+    KeyCode[KeyCode["kW"] = 87] = "kW";
+    KeyCode[KeyCode["kX"] = 88] = "kX";
+    KeyCode[KeyCode["kY"] = 89] = "kY";
+    KeyCode[KeyCode["kZ"] = 90] = "kZ";
+    KeyCode[KeyCode["kLeftMeta"] = 91] = "kLeftMeta";
+    KeyCode[KeyCode["kRightMeta"] = 92] = "kRightMeta";
+    KeyCode[KeyCode["kMenu"] = 93] = "kMenu";
+    KeyCode[KeyCode["kKP0"] = 96] = "kKP0";
+    KeyCode[KeyCode["kKP1"] = 97] = "kKP1";
+    KeyCode[KeyCode["kKP2"] = 98] = "kKP2";
+    KeyCode[KeyCode["kKP3"] = 99] = "kKP3";
+    KeyCode[KeyCode["kKP4"] = 100] = "kKP4";
+    KeyCode[KeyCode["kKP5"] = 101] = "kKP5";
+    KeyCode[KeyCode["kKP6"] = 102] = "kKP6";
+    KeyCode[KeyCode["kKP7"] = 103] = "kKP7";
+    KeyCode[KeyCode["kKP8"] = 104] = "kKP8";
+    KeyCode[KeyCode["kKP9"] = 105] = "kKP9";
+    KeyCode[KeyCode["kKPMul"] = 106] = "kKPMul";
+    KeyCode[KeyCode["kKPAdd"] = 107] = "kKPAdd";
+    KeyCode[KeyCode["kKPSep"] = 108] = "kKPSep";
+    KeyCode[KeyCode["kKPSub"] = 109] = "kKPSub";
+    KeyCode[KeyCode["kKPDec"] = 110] = "kKPDec";
+    KeyCode[KeyCode["kKPDiv"] = 111] = "kKPDiv";
+    KeyCode[KeyCode["kF1"] = 112] = "kF1";
+    KeyCode[KeyCode["kF2"] = 113] = "kF2";
+    KeyCode[KeyCode["kF3"] = 114] = "kF3";
+    KeyCode[KeyCode["kF4"] = 115] = "kF4";
+    KeyCode[KeyCode["kF5"] = 116] = "kF5";
+    KeyCode[KeyCode["kF6"] = 117] = "kF6";
+    KeyCode[KeyCode["kF7"] = 118] = "kF7";
+    KeyCode[KeyCode["kF8"] = 119] = "kF8";
+    KeyCode[KeyCode["kF9"] = 120] = "kF9";
+    KeyCode[KeyCode["kF10"] = 121] = "kF10";
+    KeyCode[KeyCode["kF11"] = 122] = "kF11";
+    KeyCode[KeyCode["kF12"] = 123] = "kF12";
+    KeyCode[KeyCode["kNumLock"] = 144] = "kNumLock";
+    KeyCode[KeyCode["kScrollLock"] = 145] = "kScrollLock";
+    KeyCode[KeyCode["kAdd"] = 187] = "kAdd";
+    KeyCode[KeyCode["kComma"] = 188] = "kComma";
+    KeyCode[KeyCode["kMinus"] = 189] = "kMinus";
+    KeyCode[KeyCode["kPeriod"] = 190] = "kPeriod";
+    KeyCode[KeyCode["kApostrophe"] = 192] = "kApostrophe";
+    KeyCode[KeyCode["kLeftBrace"] = 219] = "kLeftBrace";
+    KeyCode[KeyCode["kRightBrace"] = 221] = "kRightBrace";
+    KeyCode[KeyCode["kBackSlash"] = 220] = "kBackSlash";
+    KeyCode[KeyCode["kQuot"] = 222] = "kQuot";
+    KeyCode[KeyCode["kSemicolon"] = 186] = "kSemicolon";
+    KeyCode[KeyCode["kSlash"] = 191] = "kSlash";
+})(KeyCode || (KeyCode = {}));
 
 var __extends$6 = (undefined && undefined.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -3707,5 +3704,38 @@ function FillCircle(context, x0, y0, radius, color) {
     context.putImageData(imageData, x0 - radius, y0 - radius);
 }
 
-export { GetTopLeft, GetTopRight, GetBottomLeft, GetBottomRight, Normalize, VectorLengthSq, VectorLength, DistanceSq, Distance, DotProduct, CrossProduct, GetVector, ClampPoint, BoundingShape, BoundingBox, BoundingHull, BoundingSegment, BoundingSphere, IntersectionTestShapeSegment, IntersectionTestShapeBox, IntersectionTestShapeHull, IntersectionTestShapePoint, IntersectionTestShapeShape, IntersectionTestBoxBox, IntersectionTestBoxPoint, IntersectionTestBoxHull, IntersectionTestBoxSegment, IntersectionTestBoxSphere, IntersectionTestSphereHull, IntersectionTestHullPoint, IntersectionTestSphereSphere, IntersectionTestSphereSegment, IntersectionTestHullSegment, IntersectionTestHullHull, IntersectionTestSpherePoint, IntersectionTestSegmentPoint, IntersectionTestSegmentSegment, SplineType, CurveEvaluter, StepEvaluter, CoLinearEvaluter, PolynomialsEvaluter, Spline, KeyCode, Matrix2d, EventListenerOrder, BaseEvent, EvtComponentBeforeAttach, EvtComponentAttached, EvtComponentBeforeDetach, EvtComponentDetached, EvtUpdate, EvtCull, EvtDraw, EvtHitTest, EvtGetBoundingShape, EvtFrame, EvtFocus, EvtKeyboard, EvtKeyDown, EvtKeyUp, EvtKeyPress, EvtMouse, EvtMouseDown, EvtMouseUp, EvtMouseMove, EvtMouseEnter, EvtMouseLeave, EvtClick, EvtDblClick, EvtDragBegin, EvtDragEnd, EvtDragging, EvtDragOver, EvtDragDrop, EvtResize, EvtCanvasResize, EvtGetProp, EvtSetProp, EvtSceneViewPageWillChange, EvtSceneViewPageChanged, EvtSysInfo, EventObserver, App, Component, BaseObject, SceneObject, Scene, SceneView, ResizeSensor, Canvas, CoKeyframeAnimation, CoDraggable, CoDroppable, CoImage, Graph, DrawLine, FillCircle };
+var readyFuncList = [];
+var isReady = false;
+function ready(fn) {
+    if (fn) {
+        if (isReady) {
+            window.setTimeout(fn);
+        }
+        else {
+            readyFuncList.push(fn);
+        }
+    }
+}
+function documentCompleted() {
+    return document.readyState === 'complete' || (document.readyState !== 'loading' && !document.documentElement.doScroll);
+}
+function bootstrap() {
+    isReady = true;
+    document.removeEventListener('DOMContentLoaded', bootstrap);
+    window.removeEventListener('load', bootstrap);
+    App.run();
+    readyFuncList.forEach(function (fn) { fn(); });
+    readyFuncList.length = 0;
+}
+(function () {
+    if (documentCompleted()) {
+        window.setTimeout(bootstrap);
+    }
+    else {
+        document.addEventListener('DOMContentLoaded', bootstrap);
+        window.addEventListener('load', bootstrap);
+    }
+}());
+
+export { ready, GetTopLeft, GetTopRight, GetBottomLeft, GetBottomRight, Normalize, VectorLengthSq, VectorLength, DistanceSq, Distance, DotProduct, CrossProduct, GetVector, ClampPoint, BoundingShape, BoundingBox, BoundingHull, BoundingSegment, BoundingSphere, IntersectionTestShapeSegment, IntersectionTestShapeBox, IntersectionTestShapeHull, IntersectionTestShapePoint, IntersectionTestShapeShape, IntersectionTestBoxBox, IntersectionTestBoxPoint, IntersectionTestBoxHull, IntersectionTestBoxSegment, IntersectionTestBoxSphere, IntersectionTestSphereHull, IntersectionTestHullPoint, IntersectionTestSphereSphere, IntersectionTestSphereSegment, IntersectionTestHullSegment, IntersectionTestHullHull, IntersectionTestSpherePoint, IntersectionTestSegmentPoint, IntersectionTestSegmentSegment, SplineType, CurveEvaluter, StepEvaluter, CoLinearEvaluter, PolynomialsEvaluter, Spline, KeyCode, Matrix2d, EventListenerOrder, BaseEvent, EvtComponentBeforeAttach, EvtComponentAttached, EvtComponentBeforeDetach, EvtComponentDetached, EvtUpdate, EvtCull, EvtDraw, EvtHitTest, EvtGetBoundingShape, EvtFrame, EvtFocus, EvtKeyboard, EvtKeyDown, EvtKeyUp, EvtKeyPress, EvtMouse, EvtMouseDown, EvtMouseUp, EvtMouseMove, EvtMouseEnter, EvtMouseLeave, EvtClick, EvtDblClick, EvtDragBegin, EvtDragEnd, EvtDragging, EvtDragOver, EvtDragDrop, EvtResize, EvtCanvasResize, EvtGetProp, EvtSetProp, EvtSceneViewPageWillChange, EvtSceneViewPageChanged, EvtSysInfo, EventObserver, App, Component, BaseObject, SceneObject, SceneView, ResizeSensor, Canvas, CoKeyframeAnimation, CoDraggable, CoDroppable, CoImage, Graph, DrawLine, FillCircle };
 //# sourceMappingURL=catk.es5.js.map

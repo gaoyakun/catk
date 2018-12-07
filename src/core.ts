@@ -423,6 +423,14 @@ export class App {
     private static lastFrameTime = 0;
     private static firstFrameTime = 0;
     private static frameStamp = 0;
+    private static capturedView: SceneView = null;
+    private static hoverView: SceneView = null;
+    private static focusView: SceneView = null;
+    private static views: SceneView[] = [];
+    private static clickTick: number = 0;
+    private static dblClickTick: number = 0;
+    private static clickTime: number = 400;
+    private static dblclickTime: number = 400;
     static postEvent(target: any, evt: BaseEvent): void {
         this.eventQueue.push({ evt: evt, target: target });
     }
@@ -517,11 +525,67 @@ export class App {
             this.elapsedTime = 0;
             this.deltaTime = 0;
             this.frameStamp = 0;
+            this.init();
             requestAnimationFrame(frame);
         }
     }
     static stop() {
-        this.running = false;
+        if (this.running) {
+            this.running = false;
+            this.done();
+        }
+    }
+    static addView(view: SceneView): boolean {
+        if (view && view.canvas && !this.findView(view.canvas.canvas)) {
+            this.views.push(view);
+            if (!this.focusView) {
+                this.setFocusView(view);
+            }
+            return true;
+        }
+        return false;
+    }
+    static addCanvas(canvas: HTMLCanvasElement, doubleBuffer?: boolean): SceneView {
+        if (!this.findView(canvas)) {
+            const view = new SceneView(canvas, doubleBuffer === undefined ? false : doubleBuffer);
+            return this.addView(view) ? view : null;
+        }
+        return null;
+    }
+    static setFocusView(view: SceneView) {
+        if (this.focusView !== view) {
+            if (this.focusView) {
+                this.focusView.trigger(new EvtFocus(false));
+            }
+            this.focusView = view;
+            if (this.focusView) {
+                this.focusView.trigger(new EvtFocus(true));
+            }
+        }
+    }
+    static findView(canvas: HTMLCanvasElement): SceneView {
+        for (let i = 0; i < this.views.length; i++) {
+            if (this.views[i].canvas.canvas === canvas) {
+                return this.views[i];
+            }
+        }
+        return null;
+    }
+    static removeView(canvas: HTMLCanvasElement): void {
+        for (let i = 0; i < this.views.length; i++) {
+            if (this.views[i].canvas.canvas === canvas) {
+                this.views.splice(i, 1);
+            }
+        }
+    }
+    static setCapture(view: SceneView) {
+        this.capturedView = view;
+    }
+    private static init() {
+        this.initEventListeners();
+    }
+    private static done() {
+        this.doneEventListeners();
     }
     private static processEvent(evt: BaseEvent, target: any): void {
         let handlerList = this.eventListeners[evt.type];
@@ -543,6 +607,105 @@ export class App {
                 }
             }
         }
+    }
+    private static hitView(x: number, y: number): SceneView {
+        if (this.capturedView !== null) {
+            return this.capturedView;
+        }
+        for (let i = 0; i < this.views.length; i++) {
+            const view = this.views[i];
+            const rc = view.canvas.viewport_rect;
+            if (x >= rc.x && x < rc.x + rc.w && y >= rc.y && y < rc.y + rc.h) {
+                return view;
+            }
+        }
+        return null;
+    }
+    private static resizeHandler() {
+        let e = new EvtResize();
+        this.views.forEach((view: SceneView) => {
+            view.triggerEx(e);
+        });
+    }
+    private static mouseDownHandler(ev: MouseEvent) {
+        this.clickTick = Date.now();
+        let view = this.hitView(ev.clientX, ev.clientY);
+        if (view !== null) {
+            view.handleMouseDown(ev);
+        }
+    }
+    private static mouseUpHandler(ev: MouseEvent) {
+        let view = this.hitView(ev.clientX, ev.clientY);
+        if (view !== null) {
+            let tick = Date.now();
+            if (tick < this.clickTick + this.clickTime) {
+                if (tick < this.dblClickTick + this.dblclickTime) {
+                    view.handleDblClick(ev);
+                    this.dblClickTick = 0;
+                } else {
+                    view.handleClick(ev);
+                    this.dblClickTick = tick;
+                }
+            } else {
+                this.dblClickTick = 0;
+            }
+            view.handleMouseUp(ev);
+            this.clickTick = 0;
+        } else {
+            this.clickTick = 0;
+            this.dblClickTick = 0;
+        }
+    }
+    private static mouseMoveHandler(ev: MouseEvent) {
+        let view = this.hitView(ev.clientX, ev.clientY);
+        if (view !== this.hoverView) {
+            if (this.hoverView) {
+                this.hoverView.triggerEx(new EvtMouseLeave());
+                this.hoverView = null;
+            }
+            if (view !== null) {
+                this.hoverView = view;
+                view.triggerEx(new EvtMouseEnter());
+            }
+        }
+        if (view !== null) {
+            const rc = view.canvas.viewport_rect;
+            view.updateHitObjects(ev.clientX - rc.x, ev.clientY - rc.y);
+            view.handleMouseMove(ev);
+        }
+    }
+    private static keyDownHandler(ev: KeyboardEvent) {
+        if (this.focusView) {
+            this.focusView.trigger(new EvtKeyDown(ev.key, ev.keyCode, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+        }
+    }
+    private static keyUpHandler(ev: KeyboardEvent) {
+        if (this.focusView) {
+            this.focusView.trigger(new EvtKeyUp(ev.key, ev.keyCode, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+        }
+    }
+    private static keyPressHandler(ev: KeyboardEvent) {
+        if (this.focusView) {
+            this.focusView.trigger(new EvtKeyPress(ev.key, ev.keyCode, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
+        }
+    }
+    private static initEventListeners(): void {
+        window.addEventListener('resize', this.resizeHandler);
+        window.addEventListener(window.onpointerdown ? 'pointerdown' : 'mousedown', this.mouseDownHandler);
+        window.addEventListener(window.onpointerup ? 'pointerup' : 'mouseup', this.mouseUpHandler);
+        window.addEventListener(window.onpointermove ? 'pointermove' : 'mousemove', this.mouseMoveHandler);
+        window.addEventListener('keydown', this.keyDownHandler);
+        window.addEventListener('keyup', this.keyUpHandler);
+        window.addEventListener('keypress', this.keyPressHandler);
+    }
+    private static doneEventListeners(): void {
+        window.removeEventListener('resize', this.resizeHandler);
+        window.removeEventListener(window.onpointerdown ? 'pointerdown' : 'mousedown', this.mouseDownHandler);
+        window.removeEventListener(window.onpointerup ? 'pointerup' : 'mouseup', this.mouseUpHandler);
+        window.removeEventListener(window.onpointermove ? 'pointermove' : 'mousemove', this.mouseMoveHandler);
+        window.removeEventListener('keydown', this.keyDownHandler);
+        window.removeEventListener('keyup', this.keyUpHandler);
+        window.removeEventListener('keypress', this.keyPressHandler);
     }
 }
 
@@ -948,168 +1111,6 @@ export class SceneObject extends BaseObject {
     }
 }
 
-export class Scene extends BaseObject {
-    private static capturedView: SceneView = null;
-    private static hoverView: SceneView = null;
-    private static focusView: SceneView = null;
-    private static views: SceneView[] = [];
-    private static clickTick: number = 0;
-    private static dblClickTick: number = 0;
-    private static clickTime: number = 400;
-    private static dblclickTime: number = 400;
-    public static addView(view: SceneView): boolean {
-        if (view && view.canvas && !this.findView(view.canvas.canvas)) {
-            this.views.push(view);
-            if (!this.focusView) {
-                this.setFocusView(view);
-            }
-            return true;
-        }
-        return false;
-    }
-    public static addCanvas(canvas: HTMLCanvasElement, doubleBuffer?: boolean): SceneView {
-        if (!this.findView(canvas)) {
-            const view = new SceneView(canvas, doubleBuffer === undefined ? false : doubleBuffer);
-            return this.addView(view) ? view : null;
-        }
-        return null;
-    }
-    public static setFocusView(view: SceneView) {
-        if (this.focusView !== view) {
-            if (this.focusView) {
-                this.focusView.trigger(new EvtFocus(false));
-            }
-            this.focusView = view;
-            if (this.focusView) {
-                this.focusView.trigger(new EvtFocus(true));
-            }
-        }
-    }
-    public static findView(canvas: HTMLCanvasElement): SceneView {
-        for (let i = 0; i < this.views.length; i++) {
-            if (this.views[i].canvas.canvas === canvas) {
-                return this.views[i];
-            }
-        }
-        return null;
-    }
-    public static removeView(canvas: HTMLCanvasElement): void {
-        for (let i = 0; i < this.views.length; i++) {
-            if (this.views[i].canvas.canvas === canvas) {
-                this.views.splice(i, 1);
-            }
-        }
-    }
-    public static setCapture(view: SceneView) {
-        this.capturedView = view;
-    }
-    public static init() {
-        this.initEventListeners();
-    }
-    public static done() {
-        this.doneEventListeners();
-    }
-    private static hitView(x: number, y: number): SceneView {
-        if (this.capturedView !== null) {
-            return this.capturedView;
-        }
-        for (let i = 0; i < this.views.length; i++) {
-            const view = this.views[i];
-            const rc = view.canvas.viewport_rect;
-            if (x >= rc.x && x < rc.x + rc.w && y >= rc.y && y < rc.y + rc.h) {
-                return view;
-            }
-        }
-        return null;
-    }
-    private static resizeHandler() {
-        let e = new EvtResize();
-        this.views.forEach((view: SceneView) => {
-            view.triggerEx(e);
-        });
-    }
-    private static mouseDownHandler(ev: MouseEvent) {
-        this.clickTick = Date.now();
-        let view = this.hitView(ev.clientX, ev.clientY);
-        if (view !== null) {
-            view.handleMouseDown(ev);
-        }
-    }
-    private static mouseUpHandler(ev: MouseEvent) {
-        let view = this.hitView(ev.clientX, ev.clientY);
-        if (view !== null) {
-            let tick = Date.now();
-            if (tick < this.clickTick + this.clickTime) {
-                if (tick < this.dblClickTick + this.dblclickTime) {
-                    view.handleDblClick(ev);
-                    this.dblClickTick = 0;
-                } else {
-                    view.handleClick(ev);
-                    this.dblClickTick = tick;
-                }
-            } else {
-                this.dblClickTick = 0;
-            }
-            view.handleMouseUp(ev);
-            this.clickTick = 0;
-        } else {
-            this.clickTick = 0;
-            this.dblClickTick = 0;
-        }
-    }
-    private static mouseMoveHandler(ev: MouseEvent) {
-        let view = this.hitView(ev.clientX, ev.clientY);
-        if (view !== this.hoverView) {
-            if (this.hoverView) {
-                this.hoverView.triggerEx(new EvtMouseLeave());
-                this.hoverView = null;
-            }
-            if (view !== null) {
-                this.hoverView = view;
-                view.triggerEx(new EvtMouseEnter());
-            }
-        }
-        if (view !== null) {
-            const rc = view.canvas.viewport_rect;
-            view.updateHitObjects(ev.clientX - rc.x, ev.clientY - rc.y);
-            view.handleMouseMove(ev);
-        }
-    }
-    private static keyDownHandler(ev: KeyboardEvent) {
-        if (this.focusView) {
-            this.focusView.trigger(new EvtKeyDown(ev.key, ev.keyCode, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
-        }
-    }
-    private static keyUpHandler(ev: KeyboardEvent) {
-        if (this.focusView) {
-            this.focusView.trigger(new EvtKeyUp(ev.key, ev.keyCode, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
-        }
-    }
-    private static keyPressHandler(ev: KeyboardEvent) {
-        if (this.focusView) {
-            this.focusView.trigger(new EvtKeyPress(ev.key, ev.keyCode, ev.shiftKey, ev.altKey, ev.ctrlKey, ev.metaKey));
-        }
-    }
-    private static initEventListeners(): void {
-        window.addEventListener('resize', this.resizeHandler);
-        window.addEventListener(window.onpointerdown ? 'pointerdown' : 'mousedown', this.mouseDownHandler);
-        window.addEventListener(window.onpointerup ? 'pointerup' : 'mouseup', this.mouseUpHandler);
-        window.addEventListener(window.onpointermove ? 'pointermove' : 'mousemove', this.mouseMoveHandler);
-        window.addEventListener('keydown', this.keyDownHandler);
-        window.addEventListener('keyup', this.keyUpHandler);
-        window.addEventListener('keypress', this.keyPressHandler);
-    }
-    private static doneEventListeners(): void {
-        window.removeEventListener('resize', this.resizeHandler);
-        window.removeEventListener(window.onpointerdown ? 'pointerdown' : 'mousedown', this.mouseDownHandler);
-        window.removeEventListener(window.onpointerup ? 'pointerup' : 'mouseup', this.mouseUpHandler);
-        window.removeEventListener(window.onpointermove ? 'pointermove' : 'mousemove', this.mouseMoveHandler);
-        window.removeEventListener('keydown', this.keyDownHandler);
-        window.removeEventListener('keyup', this.keyUpHandler);
-        window.removeEventListener('keypress', this.keyPressHandler);
-    }
-}
-
 export interface ISceneViewPage {
     name: string;
     rootNode: SceneObject;
@@ -1438,7 +1439,7 @@ export class SceneView extends BaseObject {
         }
     }
     setFocus(): void {
-        Scene.setFocusView(this);
+        App.setFocusView(this);
     }
     hitTest(x: number, y: number): HitTestResult {
         function hitTest_r(object: SceneObject, result: HitTestResult) {

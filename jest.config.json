@@ -1,0 +1,8 @@
+{
+    "automock": true,
+    "moduleFileExtensions": ["ts", "js", "json"],
+    "transform": {
+      "^.+\\.ts$": "<rootDir>/scripts/prep.js"
+    },
+    "testRegex": "test/.*\\.ts$"
+}

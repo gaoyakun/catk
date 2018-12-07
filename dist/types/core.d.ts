@@ -235,6 +235,14 @@ export declare class App {
     private static lastFrameTime;
     private static firstFrameTime;
     private static frameStamp;
+    private static capturedView;
+    private static hoverView;
+    private static focusView;
+    private static views;
+    private static clickTick;
+    private static dblClickTick;
+    private static clickTime;
+    private static dblclickTime;
     static postEvent(target: any, evt: BaseEvent): void;
     static triggerEvent(target: any, evt: BaseEvent): void;
     static processPendingEvents(): void;
@@ -242,7 +250,25 @@ export declare class App {
     static removeEventListener(eventType: string, bindObject: any, handler?: EventHandler<any>): void;
     static run(): void;
     static stop(): void;
+    static addView(view: SceneView): boolean;
+    static addCanvas(canvas: HTMLCanvasElement, doubleBuffer?: boolean): SceneView;
+    static setFocusView(view: SceneView): void;
+    static findView(canvas: HTMLCanvasElement): SceneView;
+    static removeView(canvas: HTMLCanvasElement): void;
+    static setCapture(view: SceneView): void;
+    private static init;
+    private static done;
     private static processEvent;
+    private static hitView;
+    private static resizeHandler;
+    private static mouseDownHandler;
+    private static mouseUpHandler;
+    private static mouseMoveHandler;
+    private static keyDownHandler;
+    private static keyUpHandler;
+    private static keyPressHandler;
+    private static initEventListeners;
+    private static doneEventListeners;
 }
 export declare class Component extends EventObserver {
     readonly type: string;
@@ -350,34 +376,6 @@ export declare class SceneObject extends BaseObject {
     setCapture(): void;
     releaseCapture(): void;
     toString(): string;
-}
-export declare class Scene extends BaseObject {
-    private static capturedView;
-    private static hoverView;
-    private static focusView;
-    private static views;
-    private static clickTick;
-    private static dblClickTick;
-    private static clickTime;
-    private static dblclickTime;
-    static addView(view: SceneView): boolean;
-    static addCanvas(canvas: HTMLCanvasElement, doubleBuffer?: boolean): SceneView;
-    static setFocusView(view: SceneView): void;
-    static findView(canvas: HTMLCanvasElement): SceneView;
-    static removeView(canvas: HTMLCanvasElement): void;
-    static setCapture(view: SceneView): void;
-    static init(): void;
-    static done(): void;
-    private static hitView;
-    private static resizeHandler;
-    private static mouseDownHandler;
-    private static mouseUpHandler;
-    private static mouseMoveHandler;
-    private static keyDownHandler;
-    private static keyUpHandler;
-    private static keyPressHandler;
-    private static initEventListeners;
-    private static doneEventListeners;
 }
 export interface ISceneViewPage {
     name: string;

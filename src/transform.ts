@@ -141,6 +141,9 @@ export class Matrix2d {
     }
     getRotationPart(): number {
         let sc = Math.sqrt(this.a * this.a + this.b * this.b);
+        if (sc === 0) {
+            return 0;
+        }
         let ac = Math.max(Math.min(this.a / sc, 1), -1);
         let as = Math.max(Math.min(this.b / sc, 1), -1);
         let angle = Math.acos(ac);
