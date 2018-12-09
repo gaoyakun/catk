@@ -2341,6 +2341,9 @@ var SceneView = /** @class */ (function (_super) {
             delete this._pages[oldName];
             page.name = newName;
             this._pages[newName] = page;
+            if (oldName === this._currentPage) {
+                this._currentPage = oldName;
+            }
         }
     };
     Object.defineProperty(SceneView.prototype, "currentPage", {
