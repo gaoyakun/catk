@@ -249,7 +249,6 @@ export declare class App {
     static addEventListener(eventType: string, bindObject: any, handler: EventHandler<any>, order: EventListenerOrder): void;
     static removeEventListener(eventType: string, bindObject: any, handler?: EventHandler<any>): void;
     static run(): void;
-    static stop(): void;
     static addView(view: SceneView): boolean;
     static addCanvas(canvas: HTMLCanvasElement, doubleBuffer?: boolean): SceneView;
     static setFocusView(view: SceneView): void;
@@ -257,7 +256,6 @@ export declare class App {
     static removeView(canvas: HTMLCanvasElement): void;
     static setCapture(view: SceneView): void;
     private static init;
-    private static done;
     private static processEvent;
     private static hitView;
     private static resizeHandler;
@@ -268,7 +266,6 @@ export declare class App {
     private static keyUpHandler;
     private static keyPressHandler;
     private static initEventListeners;
-    private static doneEventListeners;
 }
 export declare class Component extends EventObserver {
     readonly type: string;

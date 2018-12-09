@@ -529,12 +529,6 @@ export class App {
             requestAnimationFrame(frame);
         }
     }
-    static stop() {
-        if (this.running) {
-            this.running = false;
-            this.done();
-        }
-    }
     static addView(view: SceneView): boolean {
         if (view && view.canvas && !this.findView(view.canvas.canvas)) {
             this.views.push(view);
@@ -583,9 +577,6 @@ export class App {
     }
     private static init() {
         this.initEventListeners();
-    }
-    private static done() {
-        this.doneEventListeners();
     }
     private static processEvent(evt: BaseEvent, target: any): void {
         let handlerList = this.eventListeners[evt.type];
@@ -690,22 +681,13 @@ export class App {
         }
     }
     private static initEventListeners(): void {
-        window.addEventListener('resize', this.resizeHandler);
-        window.addEventListener(window.onpointerdown ? 'pointerdown' : 'mousedown', this.mouseDownHandler);
-        window.addEventListener(window.onpointerup ? 'pointerup' : 'mouseup', this.mouseUpHandler);
-        window.addEventListener(window.onpointermove ? 'pointermove' : 'mousemove', this.mouseMoveHandler);
-        window.addEventListener('keydown', this.keyDownHandler);
-        window.addEventListener('keyup', this.keyUpHandler);
-        window.addEventListener('keypress', this.keyPressHandler);
-    }
-    private static doneEventListeners(): void {
-        window.removeEventListener('resize', this.resizeHandler);
-        window.removeEventListener(window.onpointerdown ? 'pointerdown' : 'mousedown', this.mouseDownHandler);
-        window.removeEventListener(window.onpointerup ? 'pointerup' : 'mouseup', this.mouseUpHandler);
-        window.removeEventListener(window.onpointermove ? 'pointermove' : 'mousemove', this.mouseMoveHandler);
-        window.removeEventListener('keydown', this.keyDownHandler);
-        window.removeEventListener('keyup', this.keyUpHandler);
-        window.removeEventListener('keypress', this.keyPressHandler);
+        window.addEventListener('resize', this.resizeHandler.bind(this));
+        window.addEventListener(window.onpointerdown ? 'pointerdown' : 'mousedown', this.mouseDownHandler.bind(this));
+        window.addEventListener(window.onpointerup ? 'pointerup' : 'mouseup', this.mouseUpHandler.bind(this));
+        window.addEventListener(window.onpointermove ? 'pointermove' : 'mousemove', this.mouseMoveHandler.bind(this));
+        window.addEventListener('keydown', this.keyDownHandler.bind(this));
+        window.addEventListener('keyup', this.keyUpHandler.bind(this));
+        window.addEventListener('keypress', this.keyPressHandler.bind(this));
     }
 }
 
