@@ -1,6 +1,6 @@
 {
   "name": "libcatk",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "A library for easy working with html5 canvas element.",
   "keywords": [
     "canvas",
