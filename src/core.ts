@@ -1236,7 +1236,7 @@ export class SceneView extends BaseObject {
             page.name = newName;
             this._pages[newName] = page;
             if (oldName === this._currentPage) {
-                this._currentPage = oldName;
+                this._currentPage = newName;
             }
         }
     }
