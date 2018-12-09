@@ -1310,7 +1310,13 @@ export class SceneView extends BaseObject {
         this._hitObjects.push(this.rootNode);
     }
     get rootNode(): SceneObject {
-        return this._pages[this._currentPage].rootNode;
+        let node = this._pages[this._currentPage].rootNode;
+        if (!node) {
+            node = new SceneObject();
+            node.view = this;
+            this._pages[this._currentPage].rootNode = node;
+        }
+        return node;
     }
     set rootNode(node: SceneObject) {
         if (this._pages[this._currentPage].rootNode !== node) {

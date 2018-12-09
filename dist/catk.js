@@ -2442,7 +2442,13 @@ var SceneView = /** @class */ (function (_super) {
     };
     Object.defineProperty(SceneView.prototype, "rootNode", {
         get: function () {
-            return this._pages[this._currentPage].rootNode;
+            var node = this._pages[this._currentPage].rootNode;
+            if (!node) {
+                node = new SceneObject();
+                node.view = this;
+                this._pages[this._currentPage].rootNode = node;
+            }
+            return node;
         },
         set: function (node) {
             if (this._pages[this._currentPage].rootNode !== node) {
