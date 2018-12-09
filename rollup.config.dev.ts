@@ -3,15 +3,12 @@ import commonjs from 'rollup-plugin-commonjs'
 import sourceMaps from 'rollup-plugin-sourcemaps'
 import capitalize from 'lodash.capitalize'
 
-const pkg = require('./package.json');
-
 const libraryName = 'catk';
 
 export default {
     entry: `compiled/${libraryName}.js`,
     targets: [
-        {dest: pkg.main, moduleName: capitalize(libraryName), format: 'umd'},
-        {dest: pkg.module, format: 'es'},
+        {dest: 'dist/catk.js', moduleName: capitalize(libraryName), format: 'umd'}
     ],
     sourcemap: true,
     // Indicate here external modules you don't wanna include in your bundle (i.e.: 'lodash')

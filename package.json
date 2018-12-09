@@ -1,6 +1,6 @@
 {
-  "name": "catk",
-  "version": "0.0.1",
+  "name": "libcatk",
+  "version": "0.0.2",
   "description": "A library for easy working with html5 canvas element.",
   "keywords": [
     "canvas",
@@ -9,8 +9,7 @@
     "event",
     "eventobserver"
   ],
-  "main": "dist/catk.umd.js",
-  "module": "dist/catk.es5.js",
+  "main": "dist/catk.min.js",
   "typings": "dist/types/catk.d.ts",
   "files": [
     "dist"
@@ -27,7 +26,7 @@
   "scripts": {
     "lint": "tslint -t codeFrame 'src/**/*.ts' 'test/**/*.ts'",
     "prebuild": "rimraf dist",
-    "build": "tsc -p src && rollup -c rollup.config.ts && rimraf compiled && typedoc --out dist/docs --target es6 --theme minimal src",
+    "build": "tsc -p src && rollup -c rollup.config.dev.ts && rollup -c rollup.config.release.ts && rimraf compiled && typedoc --out dist/docs --target es6 --theme minimal src",
     "start": "tsc -w & rollup -c rollup.config.ts -w",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -99,9 +98,12 @@
     "replace-in-file": "^3.0.0-beta.2",
     "rimraf": "^2.6.1",
     "rollup": "^0.50.0",
+    "rollup-plugin-babel": "^4.0.3",
     "rollup-plugin-commonjs": "^8.0.2",
     "rollup-plugin-node-resolve": "^3.0.0",
+    "rollup-plugin-replace": "^2.1.0",
     "rollup-plugin-sourcemaps": "^0.4.2",
+    "rollup-plugin-uglify": "^3.0.0",
     "semantic-release": "^8.2.0",
     "ts-jest": "^21.0.0",
     "ts-node": "^3.0.6",
